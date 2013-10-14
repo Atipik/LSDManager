@@ -1,10 +1,8 @@
 function DataManager() {
-    this.eventId = 0;
-    this.events  = {};
-
+    this.eventId          = 0;
+    this.events           = {};
     this.entitiesMetadata = {};
-
-    this.storage = new Storage('datamanager'),
+    this.storage          = new Storage('datamanager'),
 
     this.extend = function(parent, child) {
         for (var i in child) {
