@@ -1,20 +1,20 @@
-var DataManager = {
-    instance         : null,
-    eventId          : 0,
-    events           : {},
+function DataManager() {
+    this.eventId = 0;
+    this.events  = {};
 
-    dataPrefix       : 'datamanager',
-    entitiesMetadata : {},
+    this.entitiesMetadata = {};
 
-    extend: function(parent, child) {
+    this.storage = new Storage('datamanager'),
+
+    this.extend = function(parent, child) {
         for (var i in child) {
             parent[i] = child[i];
         }
 
         return parent;
-    },
+    };
 
-    fireEvents: function(eventName, repository, data) {
+    this.fireEvents = function(eventName, repository, data) {
         if (this.events[eventName] !== undefined) {
             console.group(
                 'Call %d callback(s) for event %s',
@@ -30,9 +30,9 @@ var DataManager = {
 
             console.groupEnd();
         }
-    },
+    };
 
-    getRepository: function(entityName) {
+    this.getRepository = function(entityName) {
         if (this.entitiesMetadata[entityName] === undefined) {
             throw new Error('Unknown repository for ' + entityName);
         } else {
@@ -49,9 +49,9 @@ var DataManager = {
                 (metadata.methods || {}).repository || {}
             );
         }
-    },
+    };
 
-    registerEvent: function(eventName, callback) {
+    this.registerEvent = function(eventName, callback) {
         if (this.events[eventName] === undefined) {
             this.events[eventName] = { length: 0 };
         }
@@ -60,62 +60,63 @@ var DataManager = {
         this.events[eventName].length++;
 
         return this.eventId++;
-    },
+    };
 
-    setDataPrefix: function(prefix) {
-        this.dataPrefix = prefix;
-    },
+    this.setDataPrefix = function(prefix) {
+        this.storage.prefix = prefix;
+    };
 
-    setEntity: function(name, metadata) {
+    this.setEntity = function(name, metadata) {
         this.entitiesMetadata[name] = metadata;
-    },
+    };
 
-    storage: {
-        separator: '.',
-
-        get: function(key, defaultValue) {
-            return JSON.parse(
-                localStorage.getItem(
-                    this.key(
-                        [ DataManager.dataPrefix, key ]
-                    )
-                )
-            ) || defaultValue || null;
-        },
-
-        has: function(key) {
-            return this.get(key) !== null;
-        },
-
-        key: function(parts) {
-            return parts.join(this.separator);
-        },
-
-        unset: function(key) {
-            localStorage.removeItem(
-                this.key(
-                    [ DataManager.dataPrefix, key ]
-                )
-            );
-        },
-
-        set: function(key, value) {
-            localStorage.setItem(
-                this.key(
-                    [ DataManager.dataPrefix, key ]
-                ),
-                JSON.stringify(value)
-            );
-        }
-    },
-
-    unregisterEvent: function(eventName, eventId) {
+    this.unregisterEvent = function(eventName, eventId) {
         if (this.events[eventName] && this.events[eventName][eventId]) {
             delete this.events[eventName][eventId];
             this.events[eventName].length--;
         }
-    }
-};
+    };
+}
+
+function Storage(prefix) {
+    this.prefix    = prefix;
+    this.separator = '.';
+
+    this.get = function(key, defaultValue) {
+        return JSON.parse(
+            localStorage.getItem(
+                this.key(
+                    [ this.prefix, key ]
+                )
+            )
+        ) || defaultValue || null;
+    };
+
+    this.has = function(key) {
+        return this.get(key) !== null;
+    };
+
+    this.key = function(parts) {
+        return parts.join(this.separator);
+    };
+
+    this.set = function(key, value) {
+        localStorage.setItem(
+            this.key(
+                [ this.prefix, key ]
+            ),
+            JSON.stringify(value)
+        );
+    };
+
+    this.unset = function(key) {
+        localStorage.removeItem(
+            this.key(
+                [ this.prefix, key ]
+            )
+        );
+    };
+}
 
 
 function Repository(entityName, metadata, storage) {
@@ -441,3 +442,110 @@ function Repository(entityName, metadata, storage) {
         this.storage.set(this.getMetadataKey(), metadata);
     };
 }
+
+var Entity = function(metadata) {
+    this.metadata = metadata;
+
+    if (this.metadata.fields.id === undefined) {
+        this.metadata.fields.id = {};
+    }
+
+    // PROPERTIES
+    this._oldId = null;
+
+    // METHODS
+    this.fixValueType = this._fixValueType = function(field, value) {
+        var fieldMetadata = this.metadata.fields[field];
+
+        if (fieldMetadata === undefined) {
+            return null;
+        }
+
+        var hasGoodType;
+
+        if (fieldMetadata.type == 'array') {
+            hasGoodType = value instanceof Array;
+        } else {
+            hasGoodType = typeof value === fieldMetadata.type;
+        }
+
+        if (!hasGoodType) {
+            switch (fieldMetadata.type) {
+                case 'integer':
+                    value = parseInt(value, 10) || 0;
+                break;
+
+                case 'float':
+                    value = parseFloat(value) || 0.0;
+                break;
+
+                case 'string':
+                    value = '' + value;
+                break;
+
+                case 'array':
+                    if (typeof value === 'object') {
+                        var tmp = [];
+
+                        for (var i in value) {
+                            tmp.push(value[i]);
+                        }
+
+                        value = tmp;
+                    } else {
+                        value = [ value ];
+                    }
+                break;
+            }
+        }
+
+        return value;
+    };
+
+    this.get = this._get = function(field) {
+        return this.fixValueType(
+            field,
+            this[field]
+        );
+    };
+
+    this.set = this._set = function(field, value) {
+        this[field] = this.fixValueType(field, value);
+
+        return this;
+    };
+
+    var methods = (metadata.methods || {}).entity || {};
+    var method;
+
+    for (var field in metadata.fields) {
+        methodGet = this.getMethodName('get', field);
+
+        if (methods[methodGet] === undefined) {
+            entity[methodGet] = eval(
+                'f = function() {' +
+                    'return this.get("' + field + '");' +
+                '}'
+            );
+        }
+
+        methodSet = this.getMethodName('set', field);
+
+        if (methods[methodSet] === undefined) {
+            entity[methodSet] = eval(
+                'f = function(value) {' +
+                    'return this.set("' + field + '", value);' +
+                '}'
+            );
+        }
+    }
+
+    DataManager.extend(
+        entity,
+        methods
+    );
+
+    this._build = true;
+
+    return entity;
+};
