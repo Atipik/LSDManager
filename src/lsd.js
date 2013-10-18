@@ -1,8 +1,8 @@
-function DataManager() {
+function LSD() {
     this.eventId          = 0;
     this.events           = {};
     this.entitiesMetadata = {};
-    this.storage          = new Storage('datamanager'),
+    this.storage          = new Storage('lsd'),
 
     this.extend = function(parent, child) {
         for (var i in child) {
@@ -167,8 +167,8 @@ function Storage(prefix) {
 }
 
 
-function Repository(dm, entityName, metadata) {
-    this.dm         = dm;
+function Repository(lsd, entityName, metadata) {
+    this.lsd        = lsd;
     this.entityName = entityName;
     this.metadata   = metadata;
 
@@ -208,14 +208,14 @@ function Repository(dm, entityName, metadata) {
     };
 
     this.getEntity = this._getEntity = function(storageKey) {
-        var entityKey = this.dm.storage.key(storageKey);
+        var entityKey = this.lsd.storage.key(storageKey);
 
-        if (!this.dm.storage.has(entityKey)) {
+        if (!this.lsd.storage.has(entityKey)) {
             throw new Error('Unknown entity ' + this.getEntityName() + ' with storageKey ' + storageKey);
         }
 
         var entity = this.createEntity(
-            this.dm.storage.get(entityKey)
+            this.lsd.storage.get(entityKey)
         );
 
         entity._oldId = entity.id;
@@ -238,13 +238,13 @@ function Repository(dm, entityName, metadata) {
     };
 
     this.getIdsStorageKey = this._getIdsStorageKey = function() {
-        return this.dm.storage.key(
+        return this.lsd.storage.key(
             [ this.getEntityName(), '_' ]
         );
     };
 
     this.getIdsStorage = this._getIdsStorage = function() {
-        return this.dm.storage.get(
+        return this.lsd.storage.get(
             this.getIdsStorageKey(),
             []
         );
@@ -306,14 +306,14 @@ function Repository(dm, entityName, metadata) {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
 
-            this.dm.storage.unset(
-                this.dm.storage.key(
+            this.lsd.storage.unset(
+                this.lsd.storage.key(
                     [ this.getEntityName(), id ]
                 )
             );
 
             if (fireEvents) {
-                this.dm.fireEvents('afterRemove', this, id);
+                this.lsd.fireEvents('afterRemove', this, id);
             }
 
             console.log(
@@ -351,8 +351,8 @@ function Repository(dm, entityName, metadata) {
             this.setIdsStorage(entitiesId);
         }
 
-        this.dm.storage.set(
-            this.dm.storage.key(
+        this.lsd.storage.set(
+            this.lsd.storage.key(
                 [ this.getEntityName(), entity.getId() ]
             ),
             this.getEntityData(entity)
@@ -361,7 +361,7 @@ function Repository(dm, entityName, metadata) {
         entity._oldId = entity.getId();
 
         if (fireEvents) {
-            this.dm.fireEvents('afterSave', this, entity);
+            this.lsd.fireEvents('afterSave', this, entity);
         }
 
         console.groupEnd();
@@ -373,7 +373,7 @@ function Repository(dm, entityName, metadata) {
     };
 
     this.setIdsStorage = this._setIdsStorage = function(entitiesId) {
-        this.dm.storage.set(this.getIdsStorageKey(), entitiesId);
+        this.lsd.storage.set(this.getIdsStorageKey(), entitiesId);
     };
 }
 
