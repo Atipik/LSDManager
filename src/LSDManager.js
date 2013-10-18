@@ -1,8 +1,8 @@
-function LSD() {
+function LSDManager(storage) {
     this.eventId          = 0;
     this.events           = {};
     this.entitiesMetadata = {};
-    this.storage          = new Storage('lsd'),
+    this.storage          = storage || new Storage('lsd'),
 
     this.extend = function(parent, child) {
         for (var i in child) {
@@ -127,7 +127,7 @@ function LSD() {
 }
 
 function Storage(prefix) {
-    this.prefix    = prefix;
+    this.prefix    = prefix || 'storage';
     this.separator = '.';
 
     this.get = function(key, defaultValue) {
@@ -165,7 +165,6 @@ function Storage(prefix) {
         );
     };
 }
-
 
 function Repository(lsd, entityName, metadata) {
     this.lsd        = lsd;
@@ -377,7 +376,7 @@ function Repository(lsd, entityName, metadata) {
     };
 }
 
-var Entity = function(repository) {
+function Entity(repository) {
     this._repository = repository;
 
     if (this._repository.metadata.fields.id === undefined) {
@@ -432,4 +431,4 @@ var Entity = function(repository) {
         this,
         methods
     );
-};
+}

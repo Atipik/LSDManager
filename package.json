@@ -14,7 +14,7 @@
     "node-localstorage": "*"
   },
   "devDependencies": {
-    "atoum.js": "https://github.com/jubianchi/atoum.js/tarball/master"
+    "atoum.js": "*"
   },
   "repository": {
     "type": "git",
