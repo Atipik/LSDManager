@@ -1,8 +1,19 @@
-function LSDManager(storage) {
+function LSDManager(injectStorage, injectConsole) {
     this.eventId          = 0;
     this.events           = {};
     this.entitiesMetadata = {};
-    this.storage          = storage || new Storage('lsd'),
+
+    if (injectStorage) {
+        this.storage = injectStorage;
+    } else {
+        this.storage = new Storage('lsd');
+    }
+
+    if (injectConsole) {
+        this.console = injectConsole;
+    } else {
+        this.console = console;
+    }
 
     this.extend = function(parent, child) {
         for (var i in child) {
@@ -14,7 +25,7 @@ function LSDManager(storage) {
 
     this.fireEvents = function(eventName, repository, data) {
         if (this.events[eventName] !== undefined) {
-            console.group(
+            this.console.group(
                 'Call %d callback(s) for event %s',
                 this.events[eventName].length,
                 eventName
@@ -26,7 +37,7 @@ function LSDManager(storage) {
                 }
             }
 
-            console.groupEnd();
+            this.console.groupEnd();
         }
     };
 
@@ -34,12 +45,15 @@ function LSDManager(storage) {
         if (type === undefined) {
             value = null;
         } else if (this.getType(value) !== type) {
+            var tmp, i;
+            var valueType = this.getType(value);
+
             switch (type) {
                 case 'array':
-                    if (this.getType(value) === 'object') {
-                        var tmp = [];
+                    if (valueType === 'object') {
+                        tmp = [];
 
-                        for (var i in value) {
+                        for (i in value) {
                             tmp.push(value[i]);
                         }
 
@@ -49,16 +63,61 @@ function LSDManager(storage) {
                     }
                 break;
 
-                case 'float':
-                    value = parseFloat(value) || 0.0;
+                case 'boolean':
+                    if (value === 'false' || valueType === 'array' && value.length === 0 || valueType === 'object' && Object.keys(value).length === 0) {
+                        value = false;
+                    } else {
+                        value = !!value;
+                    }
                 break;
 
+                case 'float':
                 case 'integer':
-                    value = parseInt(value, 10) || 0;
+                    if (valueType === 'boolean') {
+                        if (value) {
+                            value = 1;
+                        } else {
+                            value = 0;
+                        }
+                    } else if (valueType === 'number' && type === 'integer') {
+                        value = Math.round(value);
+                    } else if (valueType === 'array') {
+                        value = value.length;
+                    } else {
+                        if (type === 'integer') {
+                            value = parseInt(value, 10);
+                        } else {
+                            value = parseFloat(value);
+                        }
+
+                        if (!value) {
+                            value = 0;
+                        }
+                    }
+                break;
+
+                case 'object':
+                    if (valueType === 'array') {
+                        tmp = {};
+
+                        for (i in value) {
+                            tmp[i] = value[i];
+                        }
+
+                        value = tmp;
+                    } else {
+                        value = {
+                            0: value
+                        };
+                    }
                 break;
 
                 case 'string':
-                    value = '' + value;
+                    if (valueType === 'array' || valueType === 'object') {
+                        value = JSON.stringify(value);
+                    } else {
+                        value = '' + value;
+                    }
                 break;
             }
         }
@@ -78,9 +137,15 @@ function LSDManager(storage) {
                 metadata
             );
 
+            var repositoryMethods = {};
+
+            if (metadata.methods && metadata.methods.repository) {
+                repositoryMethods = metadata.methods.repository;
+            }
+
             return this.extend(
                 repository,
-                (metadata.methods || {}).repository || {}
+                repositoryMethods
             );
         }
     };
@@ -96,7 +161,17 @@ function LSDManager(storage) {
             '[object Array]'   : 'array'
         };
 
-        return TYPES[typeof o] || TYPES[TOSTRING.call(o)] || (o ? 'object' : 'null');
+        var type;
+
+        if ((type = TYPES[typeof o]) !== undefined) {
+            return type;
+        } else if ((type = TYPES[TOSTRING.call(o)]) !== undefined) {
+            return type;
+        } else if (o) {
+            return 'object';
+        } else {
+            return 'null';
+        }
     };
 
     this.registerEvent = function(eventName, callback) {
@@ -122,22 +197,41 @@ function LSDManager(storage) {
         if (this.events[eventName] && this.events[eventName][eventId]) {
             delete this.events[eventName][eventId];
             this.events[eventName].length--;
+
+            if (this.events[eventName].length === 0) {
+                delete this.events[eventName];
+            }
         }
     };
 }
 
 function Storage(prefix) {
-    this.prefix    = prefix || 'storage';
+    if (prefix) {
+        this.prefix = prefix;
+    } else {
+        this.prefix = 'storage';
+    }
+
     this.separator = '.';
 
     this.get = function(key, defaultValue) {
-        return JSON.parse(
+        value = JSON.parse(
             localStorage.getItem(
                 this.key(
                     [ this.prefix, key ]
                 )
             )
-        ) || defaultValue || null;
+        );
+
+        if (!value) {
+            if (defaultValue) {
+                value = defaultValue;
+            } else {
+                value = null;
+            }
+        }
+
+        return value;
     };
 
     this.has = function(key) {
@@ -174,9 +268,13 @@ function Repository(lsd, entityName, metadata) {
     this.nextId = 1;
 
     this.createEntity = this._createEntity = function(data) {
+        if (!data) {
+            data = {};
+        }
+
         return this.loadEntity(
             new Entity(this),
-            data || {}
+            data
         );
     };
 
@@ -291,7 +389,7 @@ function Repository(lsd, entityName, metadata) {
             fireEvents = true;
         }
 
-        console.group(
+        this.console.group(
             'Deleting %s #%s',
             this.getEntityName(),
             id
@@ -300,7 +398,7 @@ function Repository(lsd, entityName, metadata) {
         var entitiesId = this.getIdsStorage();
         var indexOf    = entitiesId.indexOf(id);
         if (indexOf === -1) {
-            console.log('Nothing to delete');
+            this.console.log('Nothing to delete');
         } else {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
@@ -315,14 +413,14 @@ function Repository(lsd, entityName, metadata) {
                 this.lsd.fireEvents('afterRemove', this, id);
             }
 
-            console.log(
+            this.console.log(
                 '%s #%s deleted',
                 this.getEntityName(),
                 id
             );
         }
 
-        console.groupEnd();
+        this.console.groupEnd();
     };
 
     this.save = this._save = function(entity, fireEvents) {
@@ -334,7 +432,7 @@ function Repository(lsd, entityName, metadata) {
             fireEvents = true;
         }
 
-        console.group(
+        this.console.group(
             'Saving %s #%s',
             this.getEntityName(),
             entity.getId()
@@ -363,8 +461,8 @@ function Repository(lsd, entityName, metadata) {
             this.lsd.fireEvents('afterSave', this, entity);
         }
 
-        console.groupEnd();
-        console.log(
+        this.console.groupEnd();
+        this.console.log(
             '%s #%s saved',
             this.getEntityName(),
             entity.getId()
@@ -402,7 +500,11 @@ function Entity(repository) {
         return this;
     };
 
-    var methods = (this._repository.metadata.methods || {}).entity || {};
+    var methods = {};
+    if (this._repository.metadata.methods && this._repository.metadata.methods.entity) {
+        methods = this._repository.metadata.methods.entity;
+    }
+
     var method;
 
     for (var field in this._repository.metadata.fields) {
