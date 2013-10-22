@@ -1,0 +1,11 @@
+{
+  "authors"     : [ "Renaud LITTOLFF <rlittolff@gmail.com>" ],
+  "description" : "Local Storage Data Manager",
+  "homepage"    : "https://github.com/marmotz/LSDManager",
+  "ignore"      : [ "Makefile", "package.json" ],
+  "keywords"    : [ "localStorage", "ORM", "Data" ],
+  "license"     : "GPL",
+  "main"        : "src/LSDManager.js",
+  "name"        : "LSDManager",
+  "version"     : "0.1.0"
+}

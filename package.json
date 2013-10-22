@@ -1,26 +1,12 @@
 {
-  "name"        : "lsd",
-  "version"     : "0.0.1",
-  "description" : "Local Storage Datamanager",
-  "author"      : "Renaud LITTOLFF <rlittolff@gmail.com>",
-  "license"     : "GPL",
   "directories" : {
     "test": "tests"
   },
   "scripts": {
     "test": "make test"
   },
-  "dependencies": {
-    "node-localstorage": "*"
-  },
   "devDependencies": {
+    "node-localstorage": "*",
     "atoum.js": "*"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/marmotz/datamanager.git"
-  },
-  "bugs": {
-    "url": "https://github.com/marmotz/datamanager/issues"
   }
 }
