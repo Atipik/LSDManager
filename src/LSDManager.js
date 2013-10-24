@@ -261,7 +261,7 @@ function Storage(prefix) {
 }
 
 function Repository(manager, entityName, metadata) {
-    this.manager        = manager;
+    this.manager    = manager;
     this.entityName = entityName;
     this.metadata   = metadata;
 
@@ -389,7 +389,7 @@ function Repository(manager, entityName, metadata) {
             fireEvents = true;
         }
 
-        this.console.group(
+        this.manager.console.group(
             'Deleting %s #%s',
             this.getEntityName(),
             id
@@ -398,7 +398,7 @@ function Repository(manager, entityName, metadata) {
         var entitiesId = this.getIdsStorage();
         var indexOf    = entitiesId.indexOf(id);
         if (indexOf === -1) {
-            this.console.log('Nothing to delete');
+            this.manager.console.log('Nothing to delete');
         } else {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
@@ -413,14 +413,14 @@ function Repository(manager, entityName, metadata) {
                 this.manager.fireEvents('afterRemove', this, id);
             }
 
-            this.console.log(
+            this.manager.console.log(
                 '%s #%s deleted',
                 this.getEntityName(),
                 id
             );
         }
 
-        this.console.groupEnd();
+        this.manager.console.groupEnd();
     };
 
     this.save = this._save = function(entity, fireEvents) {
@@ -432,7 +432,7 @@ function Repository(manager, entityName, metadata) {
             fireEvents = true;
         }
 
-        this.console.group(
+        this.manager.console.group(
             'Saving %s #%s',
             this.getEntityName(),
             entity.getId()
@@ -461,8 +461,8 @@ function Repository(manager, entityName, metadata) {
             this.manager.fireEvents('afterSave', this, entity);
         }
 
-        this.console.groupEnd();
-        this.console.log(
+        this.manager.console.groupEnd();
+        this.manager.console.log(
             '%s #%s saved',
             this.getEntityName(),
             entity.getId()
