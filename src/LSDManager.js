@@ -265,7 +265,7 @@ function Repository(manager, entityName, metadata) {
     this.entityName = entityName;
     this.metadata   = metadata;
 
-    this.nextId = 1;
+    this.lastId = 0;
 
     this.createEntity = this._createEntity = function(data) {
         if (!data) {
@@ -352,7 +352,15 @@ function Repository(manager, entityName, metadata) {
     };
 
     this.getNewId = this._getNewId = function(entity) {
-        return 'id' + new Date().getTime();
+        var id;
+
+        do {
+            id = 'id' + new Date().getTime();
+        } while (id === this.lastId);
+
+        this.lastId = id;
+
+        return id;
     };
 
     this.loadEntity = this._loadEntity = function(entity, data) {
