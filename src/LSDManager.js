@@ -1,4 +1,4 @@
-function LSDManager(injectStorage, injectConsole) {
+function LSDManager(injectStorage) {
     this.eventId          = 0;
     this.events           = {};
     this.entitiesMetadata = {};
@@ -7,12 +7,6 @@ function LSDManager(injectStorage, injectConsole) {
         this.storage = injectStorage;
     } else {
         this.storage = new Storage('lsd');
-    }
-
-    if (injectConsole) {
-        this.console = injectConsole;
-    } else {
-        this.console = console;
     }
 
     this.extend = function(parent, child) {
@@ -25,7 +19,7 @@ function LSDManager(injectStorage, injectConsole) {
 
     this.fireEvents = function(eventName, repository, data) {
         if (this.events[eventName] !== undefined) {
-            this.console.group(
+            console.group(
                 'Call %d callback(s) for event %s',
                 this.events[eventName].length,
                 eventName
@@ -37,7 +31,7 @@ function LSDManager(injectStorage, injectConsole) {
                 }
             }
 
-            this.console.groupEnd();
+            console.groupEnd();
         }
     };
 
@@ -397,7 +391,7 @@ function Repository(manager, entityName, metadata) {
             fireEvents = true;
         }
 
-        this.manager.console.group(
+        console.group(
             'Deleting %s #%s',
             this.getEntityName(),
             id
@@ -406,7 +400,7 @@ function Repository(manager, entityName, metadata) {
         var entitiesId = this.getIdsStorage();
         var indexOf    = entitiesId.indexOf(id);
         if (indexOf === -1) {
-            this.manager.console.log('Nothing to delete');
+            console.log('Nothing to delete');
         } else {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
@@ -421,14 +415,14 @@ function Repository(manager, entityName, metadata) {
                 this.manager.fireEvents('afterRemove', this, id);
             }
 
-            this.manager.console.log(
+            console.log(
                 '%s #%s deleted',
                 this.getEntityName(),
                 id
             );
         }
 
-        this.manager.console.groupEnd();
+        console.groupEnd();
     };
 
     this.save = this._save = function(entity, fireEvents) {
@@ -440,7 +434,7 @@ function Repository(manager, entityName, metadata) {
             fireEvents = true;
         }
 
-        this.manager.console.group(
+        console.group(
             'Saving %s #%s',
             this.getEntityName(),
             entity.getId()
@@ -469,8 +463,8 @@ function Repository(manager, entityName, metadata) {
             this.manager.fireEvents('afterSave', this, entity);
         }
 
-        this.manager.console.groupEnd();
-        this.manager.console.log(
+        console.groupEnd();
+        console.log(
             '%s #%s saved',
             this.getEntityName(),
             entity.getId()

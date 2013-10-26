@@ -46,14 +46,17 @@ module.exports = {
         var lsd;
 
         this
-            .given(lsd = new LSDManager())
-            .and(lsd.registerEvent('event', eventCallback1 = this.generateCallback()))
-            .and(lsd.registerEvent('event', eventCallback2 = this.generateCallback()))
-            .and(lsd.registerEvent('event', eventCallback3 = this.generateCallback()))
+            .given(console.group  = function() {})
+            .and(console.groupEnd = function() {})
+
+            .given(data     = {})
             .and(repository = {})
-            .and(data       = {})
-            .and(consoleMock = this.generateStub(console, 'group',    function() {}))
-            .and(consoleMock = this.generateStub(console, 'groupEnd', function() {}))
+
+            .given(lsd = new LSDManager())
+            .and(stubConsoleGroup = this.generateStub(console, 'group'))
+            .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
+            .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
+            .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
             .and(lsd.fireEvents('noevent', repository, data))
                 .callback(eventCallback1)
                     .wasNotCalled()
@@ -61,7 +64,15 @@ module.exports = {
                     .wasNotCalled()
                 .callback(eventCallback3)
                     .wasNotCalled()
-            .and(lsd.fireEvents('event', repository, data))
+                .stub(stubConsoleGroup)
+                    .wasNotCalled()
+
+            .given(lsd = new LSDManager())
+            .and(stubConsoleGroup = this.generateStub(console, 'group'))
+            .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
+            .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
+            .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
+            .and(lsd.fireEvents(eventName = 'event1', repository, data))
                 .callback(eventCallback1)
                     .wasCalled()
                     .withArguments(repository, data)
@@ -69,9 +80,36 @@ module.exports = {
                     .wasCalled()
                     .withArguments(repository, data)
                 .callback(eventCallback3)
+                    .wasNotCalled()
+                .stub(stubConsoleGroup)
+                    .wasCalled()
+                    .withArguments(
+                        'Call %d callback(s) for event %s',
+                        2,
+                        eventName
+                    )
+
+            .given(lsd = new LSDManager())
+            .and(stubConsoleGroup = this.generateStub(console, 'group'))
+            .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
+            .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
+            .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
+            .and(lsd.fireEvents(eventName = 'event2', repository, data))
+                .callback(eventCallback1)
+                    .wasNotCalled()
+                .callback(eventCallback2)
+                    .wasNotCalled()
+                .callback(eventCallback3)
                     .wasCalled()
                     .withArguments(repository, data)
-
+                .stub(stubConsoleGroup)
+                    .wasCalled()
+                    .withArguments(
+                        'Call %d callback(s) for event %s',
+                        1,
+                        eventName
+                    )
+        ;
     },
     testFixValueType: function() {
         var lsd, o;
