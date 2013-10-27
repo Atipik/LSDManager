@@ -1,13 +1,31 @@
+/*
+  #        #####  ######  #     #
+  #       #     # #     # ##   ##   ##   #    #   ##    ####  ###### #####
+  #       #       #     # # # # #  #  #  ##   #  #  #  #    # #      #    #
+  #        #####  #     # #  #  # #    # # #  # #    # #      #####  #    #
+  #             # #     # #     # ###### #  # # ###### #  ### #      #####
+  #       #     # #     # #     # #    # #   ## #    # #    # #      #   #
+  #######  #####  ######  #     # #    # #    # #    #  ####  ###### #    #
+*/
+
 function LSDManager(injectStorage) {
-    this.eventId          = 0;
-    this.events           = {};
-    this.entitiesMetadata = {};
+    this.lastId            = 0;
+    this.entityDefinitions = {};
+    this.entityClasses     = {};
+    this.eventId           = 0;
+    this.events            = {};
+    this.repositories      = {};
+    this.repositoryClasses = {};
 
     if (injectStorage) {
         this.storage = injectStorage;
     } else {
         this.storage = new Storage('lsd');
     }
+
+    this.checkType = function(variable, type) {
+        return this.getType(variable) === type;
+    };
 
     this.extend = function(parent, child) {
         for (var i in child) {
@@ -33,12 +51,14 @@ function LSDManager(injectStorage) {
 
             console.groupEnd();
         }
+
+        return this;
     };
 
     this.fixValueType = function(value, type) {
         if (type === undefined) {
             value = null;
-        } else if (this.getType(value) !== type) {
+        } else if (!this.checkType(value, type)) {
             var tmp, i;
             var valueType = this.getType(value);
 
@@ -119,28 +139,68 @@ function LSDManager(injectStorage) {
         return value;
     };
 
+    this.getDataPrefix = function() {
+        return this.storage.prefix;
+    };
+
+    this.getEntityClass = function(entityName) {
+        if (this.entityClasses[entityName]) {
+            return this.entityClasses[entityName];
+        } else {
+            return {};
+        }
+    };
+
+    this.getEntityDefinition = function(entityName) {
+        if (this.entityDefinitions[entityName]) {
+            return this.entityDefinitions[entityName];
+        } else {
+            return {};
+        }
+    };
+
+    this.getMethodName = function(prefix, field, suffix) {
+        if (!suffix) {
+            suffix = '';
+        }
+
+        return prefix + field.substring(0, 1).toUpperCase() + field.substring(1) + suffix;
+    };
+
+    this.getNewId = function(entity) {
+        var id;
+
+        do {
+            id = '$$id' + new Date().getTime();
+        } while (id === this.lastId);
+
+        this.lastId = id;
+
+        return id;
+    };
+
     this.getRepository = function(entityName) {
-        if (this.entitiesMetadata[entityName] === undefined) {
+        if (!this.isValidEntity(entityName)) {
             throw new Error('Unknown repository for ' + entityName);
         } else {
-            var metadata = this.entitiesMetadata[entityName];
+            if (!this.repositories[entityName]) {
+                this.repositories[entityName] = this.extend(
+                    new Repository(this, entityName),
+                    this.getRepositoryClass(entityName)
+                );
 
-            var repository = new Repository(
-                this,
-                entityName,
-                metadata
-            );
-
-            var repositoryMethods = {};
-
-            if (metadata.methods && metadata.methods.repository) {
-                repositoryMethods = metadata.methods.repository;
+                this.repositories[entityName].init();
             }
 
-            return this.extend(
-                repository,
-                repositoryMethods
-            );
+            return this.repositories[entityName];
+        }
+    };
+
+    this.getRepositoryClass = function(entityName) {
+        if (this.repositoryClasses[entityName]) {
+            return this.repositoryClasses[entityName];
+        } else {
+            return {};
         }
     };
 
@@ -168,6 +228,22 @@ function LSDManager(injectStorage) {
         }
     };
 
+    this.isValidEntity = function(entityName) {
+        if (this.checkType(this.entityDefinitions[entityName], 'object')) {
+            return true;
+        }
+
+        if (this.checkType(this.entityClasses[entityName],     'object')) {
+            return true;
+        }
+
+        if (this.checkType(this.repositoryClasses[entityName], 'object')) {
+            return true;
+        }
+
+        return false;
+    };
+
     this.registerEvent = function(eventName, callback) {
         if (this.events[eventName] === undefined) {
             this.events[eventName] = { length: 0 };
@@ -181,10 +257,38 @@ function LSDManager(injectStorage) {
 
     this.setDataPrefix = function(prefix) {
         this.storage.prefix = prefix;
+
+        return this;
     };
 
-    this.setEntity = function(name, metadata) {
-        this.entitiesMetadata[name] = metadata;
+    this.setEntityClass = function(entityName, entityClass) {
+        this.entityClasses[entityName] = entityClass;
+
+        return this;
+    };
+
+    this.setEntityDefinition = function(entityName, entityDefinition) {
+        if (entityDefinition.fields === undefined) {
+            entityDefinition.fields = {};
+        }
+
+        if (entityDefinition.fields.id === undefined) {
+            entityDefinition.fields.id = {};
+        }
+
+        if (entityDefinition.relations === undefined) {
+            entityDefinition.relations = {};
+        }
+
+        this.entityDefinitions[entityName] = entityDefinition;
+
+        return this;
+    };
+
+    this.setRepositoryClass = function(entityName, repositoryClass) {
+        this.repositoryClasses[entityName] = repositoryClass;
+
+        return this;
     };
 
     this.unregisterEvent = function(eventName, eventId) {
@@ -196,8 +300,21 @@ function LSDManager(injectStorage) {
                 delete this.events[eventName];
             }
         }
+
+        return this;
     };
 }
+
+
+/*
+   #####
+  #     # #####  ####  #####    ##    ####  ######
+  #         #   #    # #    #  #  #  #    # #
+   #####    #   #    # #    # #    # #      #####
+        #   #   #    # #####  ###### #  ### #
+  #     #   #   #    # #   #  #    # #    # #
+   #####    #    ####  #    # #    #  ####  ######
+*/
 
 function Storage(prefix) {
     if (prefix) {
@@ -254,20 +371,56 @@ function Storage(prefix) {
     };
 }
 
-function Repository(manager, entityName, metadata) {
+
+/*
+  ######
+  #     # ###### #####   ####   ####  # #####  ####  #####  #   #
+  #     # #      #    # #    # #      #   #   #    # #    #  # #
+  ######  #####  #    # #    #  ####  #   #   #    # #    #   #
+  #   #   #      #####  #    #      # #   #   #    # #####    #
+  #    #  #      #      #    # #    # #   #   #    # #   #    #
+  #     # ###### #       ####   ####  #   #    ####  #    #   #
+*/
+function Repository(manager, entityName) {
     this.manager    = manager;
     this.entityName = entityName;
-    this.metadata   = metadata;
-
-    this.lastId = 0;
 
     this.createEntity = this._createEntity = function(data) {
         if (!data) {
             data = {};
         }
 
-        return this.loadEntity(
+        var entity = this.manager.extend(
             new Entity(this),
+            this.manager.getEntityClass(entityName)
+        );
+
+        for (var field in this.getEntityDefinition().fields) {
+            var methodGet = this.manager.getMethodName('get', field);
+
+            if (entity[methodGet] === undefined) {
+                entity[methodGet] = eval(
+                    'f = function() {' +
+                        'return this.get("' + field + '");' +
+                    '}'
+                );
+            }
+
+            var methodSet = this.manager.getMethodName('set', field);
+
+            if (entity[methodSet] === undefined) {
+                entity[methodSet] = eval(
+                    'f = function(value) {' +
+                        'return this.set("' + field + '", value);' +
+                    '}'
+                );
+            }
+        }
+
+        entity.init();
+
+        return this.loadEntity(
+            entity,
             data
         );
     };
@@ -298,39 +451,49 @@ function Repository(manager, entityName, metadata) {
         }
     };
 
-    this.getEntity = this._getEntity = function(storageKey) {
-        var entityKey = this.manager.storage.key(storageKey);
+    this.findEntity = this._findEntity = function(id, entityName) {
+        if (!entityName) {
+            entityName = this.entityName;
+        }
+
+        var entityKey = this.manager.storage.key( [ entityName, id ] );
 
         if (!this.manager.storage.has(entityKey)) {
-            throw new Error('Unknown entity ' + this.getEntityName() + ' with storageKey ' + storageKey);
+            throw new Error('Unknown entity ' + this.entityName + ' with storage key ' + entityKey);
         }
 
         var entity = this.createEntity(
             this.manager.storage.get(entityKey)
         );
 
-        entity._oldId = entity.id;
+        entity.__oldId = entity.id;
 
         return entity;
     };
 
-    this.getEntityData = this._getEntityData = function(entity) {
+    this.getEntityDefinition = this._getEntityDefinition = function() {
+        return this.manager.getEntityDefinition(this.entityName);
+    };
+
+    this.getEntityStorageData = this._getEntityStorageData = function(entity) {
         var data = {};
 
-        for (var field in this.metadata.fields) {
-            data[field] = entity[this.getMethodName('get', field)]();
+        for (var field in this.getEntityDefinition().fields) {
+            var storageMethod = this.manager.getMethodName('get', field, 'ForStorage');
+
+            if (this.manager.checkType(entity[storageMethod], 'function')) {
+                data[field] = entity[storageMethod]();
+            } else {
+                data[field] = entity[this.manager.getMethodName('get', field)]();
+            }
         }
 
         return data;
     };
 
-    this.getEntityName = this._getEntityName = function() {
-        return this.entityName;
-    };
-
     this.getIdsStorageKey = this._getIdsStorageKey = function() {
         return this.manager.storage.key(
-            [ this.getEntityName(), '_' ]
+            [ this.entityName, '$$ids' ]
         );
     };
 
@@ -341,28 +504,17 @@ function Repository(manager, entityName, metadata) {
         );
     };
 
-    this.getMethodName = this._getMethodName = function(prefix, field) {
-        return prefix + field.substring(0, 1).toUpperCase() + field.substring(1);
-    };
-
-    this.getNewId = this._getNewId = function(entity) {
-        var id;
-
-        do {
-            id = 'id' + new Date().getTime();
-        } while (id === this.lastId);
-
-        this.lastId = id;
-
-        return id;
-    };
+    this.init = function() {};
 
     this.loadEntity = this._loadEntity = function(entity, data) {
         for (var field in data) {
-            var methodName = this.getMethodName('set', field);
+            var methodStorage = this.manager.getMethodName('set', field, 'FromStorage');
+            var methodSet     = this.manager.getMethodName('set', field);
 
-            if (typeof entity[methodName] == 'function') {
-                entity[methodName](data[field]);
+            if (this.manager.checkType(entity[methodStorage], 'function')) {
+                entity[methodStorage](data[field]);
+            } else if (this.manager.checkType(entity[methodSet], 'function')) {
+                entity[methodSet](data[field]);
             }
         }
 
@@ -374,9 +526,7 @@ function Repository(manager, entityName, metadata) {
         var entities   = [];
 
         for (var i in entitiesId) {
-            var entity = this.getEntity(
-                [ this.getEntityName(), entitiesId[i] ]
-            );
+            var entity = this.findEntity(entitiesId[i]);
 
             if (filter === undefined || filter(entity)) {
                 entities.push(entity);
@@ -393,7 +543,7 @@ function Repository(manager, entityName, metadata) {
 
         console.group(
             'Deleting %s #%s',
-            this.getEntityName(),
+            this.entityName,
             id
         );
 
@@ -407,7 +557,7 @@ function Repository(manager, entityName, metadata) {
 
             this.manager.storage.unset(
                 this.manager.storage.key(
-                    [ this.getEntityName(), id ]
+                    [ this.entityName, id ]
                 )
             );
 
@@ -417,17 +567,31 @@ function Repository(manager, entityName, metadata) {
 
             console.log(
                 '%s #%s deleted',
-                this.getEntityName(),
+                this.entityName,
                 id
             );
         }
 
         console.groupEnd();
+
+        return this;
+    };
+
+    this.removeCollection = this._removeCollection = function(collection, fireEvents) {
+        console.group('Remove collection');
+
+        for (var i = 0; i < collection.length; i++) {
+            this.remove(collection[i], fireEvents);
+        }
+
+        console.groupEnd();
+
+        return this;
     };
 
     this.save = this._save = function(entity, fireEvents) {
         if (entity.getId() === undefined) {
-            entity.setId(this.getNewId());
+            entity.setId(this.manager.getNewId());
         }
 
         if (fireEvents === undefined) {
@@ -436,12 +600,12 @@ function Repository(manager, entityName, metadata) {
 
         console.group(
             'Saving %s #%s',
-            this.getEntityName(),
+            this.entityName,
             entity.getId()
         );
 
-        if (entity.getId() !== entity._oldId && entity._oldId !== null) {
-            this.remove(entity._oldId, fireEvents);
+        if (entity.getId() !== entity.__oldId && entity.__oldId !== null) {
+            this.remove(entity.__oldId, fireEvents);
         }
 
         var entitiesId = this.getIdsStorage();
@@ -452,12 +616,12 @@ function Repository(manager, entityName, metadata) {
 
         this.manager.storage.set(
             this.manager.storage.key(
-                [ this.getEntityName(), entity.getId() ]
+                [ this.entityName, entity.getId() ]
             ),
-            this.getEntityData(entity)
+            this.getEntityStorageData(entity)
         );
 
-        entity._oldId = entity.getId();
+        entity.__oldId = entity.getId();
 
         if (fireEvents) {
             this.manager.fireEvents('afterSave', this, entity);
@@ -466,9 +630,21 @@ function Repository(manager, entityName, metadata) {
         console.groupEnd();
         console.log(
             '%s #%s saved',
-            this.getEntityName(),
+            this.entityName,
             entity.getId()
         );
+    };
+
+    this.saveCollection = this._saveCollection = function(collection, fireEvents) {
+        console.group('Save collection');
+
+        for (var i = 0; i < collection.length; i++) {
+            this.save(collection[i], fireEvents);
+        }
+
+        console.groupEnd();
+
+        return this;
     };
 
     this.setIdsStorage = this._setIdsStorage = function(entitiesId) {
@@ -476,63 +652,37 @@ function Repository(manager, entityName, metadata) {
     };
 }
 
+
+/*
+  #######
+  #       #    # ##### # ##### #   #
+  #       ##   #   #   #   #    # #
+  #####   # #  #   #   #   #     #
+  #       #  # #   #   #   #     #
+  #       #   ##   #   #   #     #
+  ####### #    #   #   #   #     #
+*/
+
 function Entity(repository) {
-    this._repository = repository;
+    this.repository = repository;
 
-    if (this._repository.metadata.fields.id === undefined) {
-        this._repository.metadata.fields.id = {};
-    }
-
-    // PROPERTIES
-    this._oldId = null;
+    this.__oldId = null;
 
     this.get = this._get = function(field) {
-        return this._repository.manager.fixValueType(
+        return this.repository.manager.fixValueType(
             this[field],
-            this._repository.metadata.fields[field]
+            this.repository.getEntityDefinition().fields[field]
         );
     };
 
+    this.init = function() {};
+
     this.set = this._set = function(field, value) {
-        this[field] = this._repository.manager.fixValueType(
+        this[field] = this.repository.manager.fixValueType(
             value,
-            this._repository.metadata.fields[field]
+            this.repository.getEntityDefinition().fields[field]
         );
 
         return this;
     };
-
-    var methods = {};
-    if (this._repository.metadata.methods && this._repository.metadata.methods.entity) {
-        methods = this._repository.metadata.methods.entity;
-    }
-
-    var method;
-
-    for (var field in this._repository.metadata.fields) {
-        methodGet = this._repository.getMethodName('get', field);
-
-        if (methods[methodGet] === undefined) {
-            this[methodGet] = eval(
-                'f = function() {' +
-                    'return this.get("' + field + '");' +
-                '}'
-            );
-        }
-
-        methodSet = this._repository.getMethodName('set', field);
-
-        if (methods[methodSet] === undefined) {
-            this[methodSet] = eval(
-                'f = function(value) {' +
-                    'return this.set("' + field + '", value);' +
-                '}'
-            );
-        }
-    }
-
-    this._repository.manager.extend(
-        this,
-        methods
-    );
 }

@@ -7,5 +7,5 @@
   "license"     : "GPL",
   "main"        : "src/LSDManager.js",
   "name"        : "LSDManager",
-  "version"     : "0.1.0"
+  "version"     : "0.2.0"
 }

@@ -4,30 +4,50 @@ require('console');
 
 module.include("../src/LSDManager.js");
 
+var lsd;
+
 module.exports = {
     testInstance: function() {
-        var lsd;
-
         this
             .given(lsd = new LSDManager())
+                .number(lsd.lastId)
+                    .isEqualTo(0)
+                .object(lsd.entityDefinitions)
+                    .isEqualTo({})
+                .object(lsd.entityClasses)
+                    .isEqualTo({})
                 .number(lsd.eventId)
                     .isEqualTo(0)
                 .object(lsd.events)
                     .isEqualTo({})
-                .object(lsd.entitiesMetadata)
+                .object(lsd.repositories)
+                    .isEqualTo({})
+                .object(lsd.repositoryClasses)
                     .isEqualTo({})
                 .object(lsd.storage)
                     .isInstanceOf(Storage)
 
             .given(storage = new Storage())
             .and(lsd = new LSDManager(storage))
+                .number(lsd.lastId)
+                    .isEqualTo(0)
+                .object(lsd.entityDefinitions)
+                    .isEqualTo({})
+                .object(lsd.entityClasses)
+                    .isEqualTo({})
+                .number(lsd.eventId)
+                    .isEqualTo(0)
+                .object(lsd.events)
+                .object(lsd.repositories)
+                    .isEqualTo({})
+                    .isEqualTo({})
+                .object(lsd.repositoryClasses)
+                    .isEqualTo({})
                 .object(lsd.storage)
                     .isIdenticalTo(storage)
         ;
     },
     testExtend: function() {
-        var lsd;
-
         this
             .given(lsd = new LSDManager())
                 .object(lsd.extend({}, {}))
@@ -43,8 +63,6 @@ module.exports = {
         ;
     },
     testFireEvent: function() {
-        var lsd;
-
         this
             .given(console.group  = function() {})
             .and(console.groupEnd = function() {})
@@ -57,7 +75,8 @@ module.exports = {
             .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
             .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
             .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
-            .and(lsd.fireEvents('noevent', repository, data))
+                .object(lsd.fireEvents('noevent', repository, data))
+                    .isIdenticalTo(lsd)
                 .callback(eventCallback1)
                     .wasNotCalled()
                 .callback(eventCallback2)
@@ -72,7 +91,8 @@ module.exports = {
             .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
             .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
             .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
-            .and(lsd.fireEvents(eventName = 'event1', repository, data))
+                .object(lsd.fireEvents(eventName = 'event1', repository, data))
+                    .isIdenticalTo(lsd)
                 .callback(eventCallback1)
                     .wasCalled()
                     .withArguments(repository, data)
@@ -94,7 +114,8 @@ module.exports = {
             .and(lsd.registerEvent('event1', eventCallback1 = this.generateCallback()))
             .and(lsd.registerEvent('event1', eventCallback2 = this.generateCallback()))
             .and(lsd.registerEvent('event2', eventCallback3 = this.generateCallback()))
-            .and(lsd.fireEvents(eventName = 'event2', repository, data))
+                .object(lsd.fireEvents(eventName = 'event2', repository, data))
+                    .isIdenticalTo(lsd)
                 .callback(eventCallback1)
                     .wasNotCalled()
                 .callback(eventCallback2)
@@ -112,8 +133,6 @@ module.exports = {
         ;
     },
     testFixValueType: function() {
-        var lsd, o;
-
         this
             .given(lsd = new LSDManager())
                 // without type => null
@@ -242,8 +261,6 @@ module.exports = {
         ;
     },
     testGetType: function() {
-        var lsd;
-
         this
             .given(lsd = new LSDManager())
                 .string(lsd.getType(undefined))
@@ -269,8 +286,6 @@ module.exports = {
         ;
     },
     testUnRegisterEvent: function() {
-        var lsd;
-
         this
             .given(lsd = new LSDManager())
                 .object(lsd.events)
@@ -324,77 +339,93 @@ module.exports = {
                         .isIdenticalTo(eventCallback3)
 
                 // unregister an unknown event => do nothing
-                .given(lsd.unregisterEvent('event3'))
-                    .object(lsd.events)
-                        .hasLength(2)
-                        .hasMember('event1')
-                        .hasMember('event2')
-                    .object(lsd.events.event1)
-                        .hasLength(3)
-                        .hasMember('length')
-                        .hasMember(0)
-                        .hasMember(1)
-                    .object(lsd.events.event2)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(2)
+                .object(lsd.unregisterEvent('event3'))
+                    .isIdenticalTo(lsd)
+                .object(lsd.events)
+                    .hasLength(2)
+                    .hasMember('event1')
+                    .hasMember('event2')
+                .object(lsd.events.event1)
+                    .hasLength(3)
+                    .hasMember('length')
+                    .hasMember(0)
+                    .hasMember(1)
+                .object(lsd.events.event2)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(2)
 
                 // unregister an unknown eventId => do nothing
-                .given(lsd.unregisterEvent('event1', 10))
-                    .object(lsd.events)
-                        .hasLength(2)
-                        .hasMember('event1')
-                        .hasMember('event2')
-                    .object(lsd.events.event1)
-                        .hasLength(3)
-                        .hasMember('length')
-                        .hasMember(0)
-                        .hasMember(1)
-                    .object(lsd.events.event2)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(2)
+                .object(lsd.unregisterEvent('event1', 10))
+                    .isIdenticalTo(lsd)
+                .object(lsd.events)
+                    .hasLength(2)
+                    .hasMember('event1')
+                    .hasMember('event2')
+                .object(lsd.events.event1)
+                    .hasLength(3)
+                    .hasMember('length')
+                    .hasMember(0)
+                    .hasMember(1)
+                .object(lsd.events.event2)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(2)
 
                 // unregister an eventId of an other event => do nothing
-                .given(lsd.unregisterEvent('event1', 2))
-                    .object(lsd.events)
-                        .hasLength(2)
-                        .hasMember('event1')
-                        .hasMember('event2')
-                    .object(lsd.events.event1)
-                        .hasLength(3)
-                        .hasMember('length')
-                        .hasMember(0)
-                        .hasMember(1)
-                    .object(lsd.events.event2)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(2)
+                .object(lsd.unregisterEvent('event1', 2))
+                    .isIdenticalTo(lsd)
+                .object(lsd.events)
+                    .hasLength(2)
+                    .hasMember('event1')
+                    .hasMember('event2')
+                .object(lsd.events.event1)
+                    .hasLength(3)
+                    .hasMember('length')
+                    .hasMember(0)
+                    .hasMember(1)
+                .object(lsd.events.event2)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(2)
 
                 // unregister a known eventId
-                .given(lsd.unregisterEvent('event1', 0))
-                    .object(lsd.events)
-                        .hasLength(2)
-                        .hasMember('event1')
-                        .hasMember('event2')
-                    .object(lsd.events.event1)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(1)
-                    .object(lsd.events.event2)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(2)
+                .object(lsd.unregisterEvent('event1', 0))
+                    .isIdenticalTo(lsd)
+                .object(lsd.events)
+                    .hasLength(2)
+                    .hasMember('event1')
+                    .hasMember('event2')
+                .object(lsd.events.event1)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(1)
+                .object(lsd.events.event2)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(2)
 
                 // unregister the last callback of an event
-                .given(lsd.unregisterEvent('event1', 1))
-                    .object(lsd.events)
-                        .hasLength(1)
-                        .hasMember('event2')
-                    .object(lsd.events.event2)
-                        .hasLength(2)
-                        .hasMember('length')
-                        .hasMember(2)
+                .object(lsd.unregisterEvent('event1', 1))
+                    .isIdenticalTo(lsd)
+                .object(lsd.events)
+                    .hasLength(1)
+                    .hasMember('event2')
+                .object(lsd.events.event2)
+                    .hasLength(2)
+                    .hasMember('length')
+                    .hasMember(2)
+        ;
+    },
+    testSetGetDataPrefix: function() {
+        this
+            .given(lsd = new LSDManager())
+                .string(lsd.getDataPrefix())
+                    .isEqualTo('lsd')
+                .object(lsd.setDataPrefix('ut'))
+                    .isIdenticalTo(lsd)
+                .string(lsd.getDataPrefix())
+                    .isEqualTo('ut')
         ;
     }
 };
