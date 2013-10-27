@@ -364,6 +364,8 @@ function Storage(prefix) {
             ),
             JSON.stringify(value)
         );
+
+        return this;
     };
 
     this.unset = function(key) {
@@ -372,6 +374,8 @@ function Storage(prefix) {
                 [ this.prefix, key ]
             )
         );
+
+        return this;
     };
 }
 

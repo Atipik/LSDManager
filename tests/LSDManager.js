@@ -141,7 +141,7 @@ module.exports = {
 
                 // convert true
                 .bool(lsd.fixValueType(true, 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType(true, 'integer'))
                     .isEqualTo(1)
                 .number(lsd.fixValueType(true, 'float'))
@@ -155,7 +155,7 @@ module.exports = {
 
                 // convert false
                 .bool(lsd.fixValueType(false, 'boolean'))
-                    .isFalsy()
+                    .isFalse()
                 .number(lsd.fixValueType(false, 'integer'))
                     .isEqualTo(0)
                 .number(lsd.fixValueType(false, 'float'))
@@ -169,9 +169,9 @@ module.exports = {
 
                 // convert integer
                 .bool(lsd.fixValueType(0, 'boolean'))
-                    .isFalsy()
+                    .isFalse()
                 .bool(lsd.fixValueType(1, 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType(1, 'integer'))
                     .isEqualTo(1)
                 .number(lsd.fixValueType(1, 'float'))
@@ -185,9 +185,9 @@ module.exports = {
 
                 // convert float
                 .bool(lsd.fixValueType(0.337, 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .bool(lsd.fixValueType(1.337, 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType(1.337, 'integer'))
                     .isEqualTo(1)
                 .number(lsd.fixValueType(1.5, 'integer'))
@@ -203,11 +203,11 @@ module.exports = {
 
                 // convert string
                 .bool(lsd.fixValueType('true', 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .bool(lsd.fixValueType('false', 'boolean'))
-                    .isFalsy()
+                    .isFalse()
                 .bool(lsd.fixValueType('geek', 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType('1.337', 'integer'))
                     .isEqualTo(1)
                 .number(lsd.fixValueType('geek', 'integer'))
@@ -223,9 +223,9 @@ module.exports = {
 
                 // convert array
                 .bool(lsd.fixValueType([], 'boolean'))
-                    .isFalsy()
+                    .isFalse()
                 .bool(lsd.fixValueType([1], 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType([0], 'integer'))
                     .isEqualTo(1)
                 .number(lsd.fixValueType([0, 1, 2], 'integer'))
@@ -245,9 +245,9 @@ module.exports = {
 
                 // convert object
                 .bool(lsd.fixValueType({}, 'boolean'))
-                    .isFalsy()
+                    .isFalse()
                 .bool(lsd.fixValueType({ a: 1 }, 'boolean'))
-                    .isTruthy()
+                    .isTrue()
                 .number(lsd.fixValueType({}, 'integer'))
                     .isEqualTo(0)
                 .number(lsd.fixValueType({}, 'float'))
@@ -522,19 +522,19 @@ module.exports = {
         this
             .given(lsd = new LSDManager())
                 .bool(lsd.isValidEntity('entity'))
-                    .isFalsy()
+                    .isFalse()
 
             .given(lsd.setEntityDefinition('entity1', {}))
                 .bool(lsd.isValidEntity('entity1'))
-                    .isTruthy()
+                    .isTrue()
 
             .given(lsd.setEntityClass('entity2', {}))
                 .bool(lsd.isValidEntity('entity2'))
-                    .isTruthy()
+                    .isTrue()
 
             .given(lsd.setEntityClass('entity3', {}))
                 .bool(lsd.isValidEntity('entity3'))
-                    .isTruthy()
+                    .isTrue()
         ;
     }
 };
