@@ -4,8 +4,8 @@
   "homepage"    : "https://github.com/marmotz/LSDManager",
   "ignore"      : [ "Makefile", "package.json" ],
   "keywords"    : [ "localStorage", "ORM", "Data" ],
-  "license"     : "GPL",
+  "license"     : "MIT",
   "main"        : "src/LSDManager.js",
   "name"        : "LSDManager",
-  "version"     : "0.2.0"
+  "version"     : "0.2.1"
 }
