@@ -78,7 +78,9 @@ function LSDManager(injectStorage) {
                 break;
 
                 case 'boolean':
-                    if (value === 'false' || valueType === 'array' && value.length === 0 || valueType === 'object' && Object.keys(value).length === 0) {
+                    if (value === 'false'  ||
+                    valueType === 'array'  && value.length === 0 ||
+                    valueType === 'object' && Object.keys(value).length === 0) {
                         value = false;
                     } else {
                         value = !!value;
