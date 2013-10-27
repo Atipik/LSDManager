@@ -167,11 +167,15 @@ function LSDManager(injectStorage) {
         return prefix + field.substring(0, 1).toUpperCase() + field.substring(1) + suffix;
     };
 
-    this.getNewId = function(entity) {
+    this.getNewId = function(idFactory) {
         var id;
 
+        idFactory = idFactory || function() {
+          return new Date().getTime();
+        };
+
         do {
-            id = '$$id' + new Date().getTime();
+            id = '$$id' + idFactory();
         } while (id === this.lastId);
 
         this.lastId = id;

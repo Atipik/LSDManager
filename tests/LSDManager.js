@@ -427,5 +427,114 @@ module.exports = {
                 .string(lsd.getDataPrefix())
                     .isEqualTo('ut')
         ;
+    },
+    testSetGetEntityClass: function() {
+        this
+            .given(lsd = new LSDManager())
+            .and(entityName  = 'entity')
+                .object(lsd.getEntityClass(entityName))
+                    .isEqualTo({})
+                .object(lsd.setEntityClass(entityName, { a: 1 }))
+                    .isIdenticalTo(lsd)
+                .object(lsd.getEntityClass(entityName))
+                    .isEqualTo({ a: 1 })
+        ;
+    },
+    testSetGetEntityDefinition: function() {
+        this
+            .given(lsd = new LSDManager())
+            .and(entityName  = 'entity')
+                .object(lsd.getEntityDefinition(entityName))
+                    .isEqualTo({})
+                .object(lsd.setEntityDefinition(entityName, {}))
+                    .isIdenticalTo(lsd)
+                .object(lsd.getEntityDefinition(entityName))
+                    .isEqualTo({ fields: { id: {}}, relations: {}})
+        ;
+    },
+    testSetGetRepositoryClass: function() {
+        this
+            .given(lsd = new LSDManager())
+            .and(entityName  = 'entity')
+                .object(lsd.getRepositoryClass(entityName))
+                    .isEqualTo({})
+                .object(lsd.setRepositoryClass(entityName, { a: 1 }))
+                    .isIdenticalTo(lsd)
+                .object(lsd.getRepositoryClass(entityName))
+                    .isEqualTo({ a: 1 })
+        ;
+    },
+    testGetMethodName: function() {
+        this
+            .given(lsd = new LSDManager())
+                .string(lsd.getMethodName('get', 'fooBar'))
+                    .isEqualTo('getFooBar')
+                .string(lsd.getMethodName('get', 'foo', 'bar'))
+                    .isEqualTo('getFoobar')
+        ;
+    },
+    //
+    // BUG IN ATOUM.JS
+    //
+    // testGetNewId: function() {
+    //     this
+    //         .given(lsd = new LSDManager())
+    //         .and(mockIdFactory = this.generateMock({ idFactory: function() {} }))
+    //         .and(mockIdFactoryInstance = new mockIdFactory())
+    //         .and(mockIdFactoryInstance.controller.override('idFactory', function() { return 1; }, 1))
+    //         .and(mockIdFactoryInstance.controller.override('idFactory', function() { return 1; }, 2))
+    //         .and(mockIdFactoryInstance.controller.override('idFactory', function() { return 2; }, 3))
+    //             .number(lsd.getNewId(mockIdFactoryInstance.idFactory))
+    //                 .isEqualTo(1)
+    //             .mock(mockIdFactoryInstance)
+    //                 .call('idFactory')//.once()
+    //             .number(lsd.getNewId(mockIdFactoryInstance.idFactory))
+    //                 .isEqualTo(2)
+    //             .mock(mockIdFactoryInstance)
+    //                 .call('idFactory')//.twice()
+    //     ;
+    // },
+    testGetRepository: function() {
+        this
+            .given(lsd = new LSDManager())
+                .error(
+                    function() {
+                        lsd.getRepository('entity');
+                    }
+                )
+                    .hasMessage('Unknown repository for entity')
+
+            // no repository class set
+            .given(lsd.setEntityClass('entity1', {}))
+                .object(lsd.getRepository('entity1'))
+                    .isInstanceOf(Repository)
+
+            // repository class set
+            .given(lsd.setRepositoryClass('entity2', { a: 1 }))
+                .object(repository = lsd.getRepository('entity2'))
+                    .isInstanceOf(Repository)
+                    .hasMember('a')
+                .number(repository.a)
+                    .isEqualTo(1)
+        ;
+    },
+    testIsValidEntity: function() {
+        this
+            .given(lsd = new LSDManager())
+                .bool(lsd.isValidEntity('entity'))
+                    .isFalsy()
+
+            .given(lsd.setEntityDefinition('entity1', {}))
+                .bool(lsd.isValidEntity('entity1'))
+                    .isTruthy()
+
+            .given(lsd.setEntityClass('entity2', {}))
+                .bool(lsd.isValidEntity('entity2'))
+                    .isTruthy()
+
+            .given(lsd.setEntityClass('entity3', {}))
+                .bool(lsd.isValidEntity('entity3'))
+                    .isTruthy()
+        ;
     }
 };
