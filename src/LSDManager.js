@@ -177,7 +177,7 @@ function LSDManager(injectStorage) {
         };
 
         do {
-            id = '$$id' + idFactory();
+            id = 'id' + idFactory();
         } while (id === this.lastId);
 
         this.lastId = id;
