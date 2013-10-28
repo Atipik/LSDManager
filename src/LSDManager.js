@@ -332,20 +332,18 @@ function Storage(prefix) {
     this.separator = '.';
 
     this.get = function(key, defaultValue) {
-        value = JSON.parse(
-            localStorage.getItem(
-                this.key(
-                    [ this.prefix, key ]
-                )
+        var value = localStorage.getItem(
+            this.key(
+                [ this.prefix, key ]
             )
         );
 
-        if (!value) {
-            if (defaultValue) {
+        if (value === null) {
+            if (defaultValue !== undefined) {
                 value = defaultValue;
-            } else {
-                value = null;
             }
+        } else {
+            value = JSON.parse(value);
         }
 
         return value;
