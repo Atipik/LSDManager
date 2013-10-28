@@ -116,7 +116,7 @@ function LSDManager(injectStorage) {
                     if (valueType === 'array') {
                         tmp = {};
 
-                        for (i in value) {
+                        for (i = 0; i < value.length; i++) {
                             tmp[i] = value[i];
                         }
 
@@ -532,8 +532,9 @@ function Repository(manager, entityName) {
     this.query = this._query = function(filter) {
         var entitiesId = this.getIdsStorage();
         var entities   = [];
+        var i;
 
-        for (var i in entitiesId) {
+        for (i = 0; i < entitiesId.length; i++) {
             var entity = this.findEntity(entitiesId[i]);
 
             if (filter === undefined || filter(entity)) {
