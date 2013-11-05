@@ -9,13 +9,14 @@
 */
 
 function LSDManager(injectStorage) {
-    this.lastId            = 0;
-    this.entityDefinitions = {};
-    this.entityClasses     = {};
-    this.eventId           = 0;
-    this.events            = {};
-    this.repositories      = {};
-    this.repositoryClasses = {};
+    this.lastId              = 0;
+    this.compiledEntityClass = {};
+    this.entityDefinitions   = {};
+    this.entityClasses       = {};
+    this.eventId             = 0;
+    this.events              = {};
+    this.repositories        = {};
+    this.repositoryClasses   = {};
 
     if (injectStorage) {
         this.storage = injectStorage;
@@ -141,6 +142,43 @@ function LSDManager(injectStorage) {
         return value;
     };
 
+    this.getCompiledEntityClass = function(entityName) {
+        if (!this.compiledEntityClass[entityName]) {
+            var getGetter = function(field) {
+                return function() {
+                    return this.get(field);
+                };
+            };
+
+            var getSetter = function(field) {
+                return function(value) {
+                    return this.set(field, value);
+                };
+            };
+
+            this.compiledEntityClass[entityName] = this.extend(
+                {},
+                this.getEntityClass(entityName)
+            );
+
+            for (var field in this.getEntityDefinition(entityName).fields) {
+                var methodGet = this.getMethodName('get', field);
+
+                if (this.compiledEntityClass[entityName][methodGet] === undefined) {
+                    this.compiledEntityClass[entityName][methodGet] = getGetter(field);
+                }
+
+                var methodSet = this.getMethodName('set', field);
+
+                if (this.compiledEntityClass[entityName][methodSet] === undefined) {
+                    this.compiledEntityClass[entityName][methodSet] = getSetter(field);
+                }
+            }
+        }
+
+        return this.compiledEntityClass[entityName];
+    };
+
     this.getDataPrefix = function() {
         return this.storage.prefix;
     };
@@ -261,6 +299,12 @@ function LSDManager(injectStorage) {
         return this.eventId++;
     };
 
+    this.setCompiledEntityClass = function(entityName, compiledEntityClass) {
+        this.compiledEntityClass[entityName] = compiledEntityClass;
+
+        return this;
+    };
+
     this.setDataPrefix = function(prefix) {
         this.storage.prefix = prefix;
 
@@ -269,6 +313,8 @@ function LSDManager(injectStorage) {
 
     this.setEntityClass = function(entityName, entityClass) {
         this.entityClasses[entityName] = entityClass;
+
+        this.setCompiledEntityClass(entityName, null);
 
         return this;
     };
@@ -287,6 +333,8 @@ function LSDManager(injectStorage) {
         }
 
         this.entityDefinitions[entityName] = entityDefinition;
+
+        this.setCompiledEntityClass(entityName, null);
 
         return this;
     };
@@ -400,37 +448,17 @@ function Repository(manager, entityName) {
 
         var entity = this.manager.extend(
             new Entity(this),
-            this.manager.getEntityClass(entityName)
+            this.manager.getCompiledEntityClass(entityName)
         );
-
-        for (var field in this.getEntityDefinition().fields) {
-            var methodGet = this.manager.getMethodName('get', field);
-
-            if (entity[methodGet] === undefined) {
-                entity[methodGet] = eval(
-                    'f = function() {' +
-                        'return this.get("' + field + '");' +
-                    '}'
-                );
-            }
-
-            var methodSet = this.manager.getMethodName('set', field);
-
-            if (entity[methodSet] === undefined) {
-                entity[methodSet] = eval(
-                    'f = function(value) {' +
-                        'return this.set("' + field + '", value);' +
-                    '}'
-                );
-            }
-        }
 
         entity.init();
 
-        return this.loadEntity(
+        entity = this.loadEntity(
             entity,
             data
         );
+
+        return entity;
     };
 
     this.findAll = this._findAll = function() {
