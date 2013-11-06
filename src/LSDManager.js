@@ -9,19 +9,19 @@
 */
 
 function LSDManager(injectStorage) {
-    this.lastId              = 0;
-    this.compiledEntityClass = {};
-    this.entityDefinitions   = {};
-    this.entityClasses       = {};
-    this.eventId             = 0;
-    this.events              = {};
-    this.repositories        = {};
-    this.repositoryClasses   = {};
+    this.$lastId            = 0;
+    this.$entity            = {};
+    this.$entityClasses     = {};
+    this.$entityDefinitions = {};
+    this.$eventId           = 0;
+    this.$events            = {};
+    this.$repositories      = {};
+    this.$repositoryClasses = {};
 
     if (injectStorage) {
-        this.storage = injectStorage;
+        this.$storage = injectStorage;
     } else {
-        this.storage = new Storage('lsd');
+        this.$storage = new Storage('lsd');
     }
 
     this.checkType = function(variable, type) {
@@ -37,16 +37,16 @@ function LSDManager(injectStorage) {
     };
 
     this.fireEvents = function(eventName, repository, data) {
-        if (this.events[eventName] !== undefined) {
+        if (this.$events[eventName] !== undefined) {
             console.group(
                 'Call %d callback(s) for event %s',
-                this.events[eventName].length,
+                this.$events[eventName].length,
                 eventName
             );
 
-            for (var i in this.events[eventName]) {
+            for (var i in this.$events[eventName]) {
                 if (i !== 'length') {
-                    this.events[eventName][i](repository, data);
+                    this.$events[eventName][i](repository, data);
                 }
             }
 
@@ -142,8 +142,8 @@ function LSDManager(injectStorage) {
         return value;
     };
 
-    this.getCompiledEntityClass = function(entityName) {
-        if (!this.compiledEntityClass[entityName]) {
+    this.getEntity = function(entityName) {
+        if (!this.$entity[entityName]) {
             var getGetter = function(field) {
                 return function() {
                     return this.get(field);
@@ -156,7 +156,7 @@ function LSDManager(injectStorage) {
                 };
             };
 
-            this.compiledEntityClass[entityName] = this.extend(
+            this.$entity[entityName] = this.extend(
                 {},
                 this.getEntityClass(entityName)
             );
@@ -164,36 +164,36 @@ function LSDManager(injectStorage) {
             for (var field in this.getEntityDefinition(entityName).fields) {
                 var methodGet = this.getMethodName('get', field);
 
-                if (this.compiledEntityClass[entityName][methodGet] === undefined) {
-                    this.compiledEntityClass[entityName][methodGet] = getGetter(field);
+                if (this.$entity[entityName][methodGet] === undefined) {
+                    this.$entity[entityName][methodGet] = getGetter(field);
                 }
 
                 var methodSet = this.getMethodName('set', field);
 
-                if (this.compiledEntityClass[entityName][methodSet] === undefined) {
-                    this.compiledEntityClass[entityName][methodSet] = getSetter(field);
+                if (this.$entity[entityName][methodSet] === undefined) {
+                    this.$entity[entityName][methodSet] = getSetter(field);
                 }
             }
         }
 
-        return this.compiledEntityClass[entityName];
+        return this.$entity[entityName];
     };
 
     this.getDataPrefix = function() {
-        return this.storage.prefix;
+        return this.$storage.$prefix;
     };
 
     this.getEntityClass = function(entityName) {
-        if (this.entityClasses[entityName]) {
-            return this.entityClasses[entityName];
+        if (this.$entityClasses[entityName]) {
+            return this.$entityClasses[entityName];
         } else {
             return {};
         }
     };
 
     this.getEntityDefinition = function(entityName) {
-        if (this.entityDefinitions[entityName]) {
-            return this.entityDefinitions[entityName];
+        if (this.$entityDefinitions[entityName]) {
+            return this.$entityDefinitions[entityName];
         } else {
             return {};
         }
@@ -216,9 +216,9 @@ function LSDManager(injectStorage) {
 
         do {
             id = 'id' + idFactory();
-        } while (id === this.lastId);
+        } while (id === this.$lastId);
 
-        this.lastId = id;
+        this.$lastId = id;
 
         return id;
     };
@@ -227,22 +227,22 @@ function LSDManager(injectStorage) {
         if (!this.isValidEntity(entityName)) {
             throw new Error('Unknown repository for ' + entityName);
         } else {
-            if (!this.repositories[entityName]) {
-                this.repositories[entityName] = this.extend(
+            if (!this.$repositories[entityName]) {
+                this.$repositories[entityName] = this.extend(
                     new Repository(this, entityName),
                     this.getRepositoryClass(entityName)
                 );
 
-                this.repositories[entityName].init();
+                this.$repositories[entityName].init();
             }
 
-            return this.repositories[entityName];
+            return this.$repositories[entityName];
         }
     };
 
     this.getRepositoryClass = function(entityName) {
-        if (this.repositoryClasses[entityName]) {
-            return this.repositoryClasses[entityName];
+        if (this.$repositoryClasses[entityName]) {
+            return this.$repositoryClasses[entityName];
         } else {
             return {};
         }
@@ -273,15 +273,15 @@ function LSDManager(injectStorage) {
     };
 
     this.isValidEntity = function(entityName) {
-        if (this.checkType(this.entityDefinitions[entityName], 'object')) {
+        if (this.checkType(this.$entityDefinitions[entityName], 'object')) {
             return true;
         }
 
-        if (this.checkType(this.entityClasses[entityName],     'object')) {
+        if (this.checkType(this.$entityClasses[entityName],     'object')) {
             return true;
         }
 
-        if (this.checkType(this.repositoryClasses[entityName], 'object')) {
+        if (this.checkType(this.$repositoryClasses[entityName], 'object')) {
             return true;
         }
 
@@ -289,32 +289,32 @@ function LSDManager(injectStorage) {
     };
 
     this.registerEvent = function(eventName, callback) {
-        if (this.events[eventName] === undefined) {
-            this.events[eventName] = { length: 0 };
+        if (this.$events[eventName] === undefined) {
+            this.$events[eventName] = { length: 0 };
         }
 
-        this.events[eventName][this.eventId] = callback;
-        this.events[eventName].length++;
+        this.$events[eventName][this.$eventId] = callback;
+        this.$events[eventName].length++;
 
-        return this.eventId++;
+        return this.$eventId++;
     };
 
-    this.setCompiledEntityClass = function(entityName, compiledEntityClass) {
-        this.compiledEntityClass[entityName] = compiledEntityClass;
+    this.setEntity = function(entityName, compiledEntityClass) {
+        this.$entity[entityName] = compiledEntityClass;
 
         return this;
     };
 
     this.setDataPrefix = function(prefix) {
-        this.storage.prefix = prefix;
+        this.$storage.$prefix = prefix;
 
         return this;
     };
 
     this.setEntityClass = function(entityName, entityClass) {
-        this.entityClasses[entityName] = entityClass;
+        this.$entityClasses[entityName] = entityClass;
 
-        this.setCompiledEntityClass(entityName, null);
+        this.setEntity(entityName, null);
 
         return this;
     };
@@ -332,26 +332,26 @@ function LSDManager(injectStorage) {
             entityDefinition.relations = {};
         }
 
-        this.entityDefinitions[entityName] = entityDefinition;
+        this.$entityDefinitions[entityName] = entityDefinition;
 
-        this.setCompiledEntityClass(entityName, null);
+        this.setEntity(entityName, null);
 
         return this;
     };
 
     this.setRepositoryClass = function(entityName, repositoryClass) {
-        this.repositoryClasses[entityName] = repositoryClass;
+        this.$repositoryClasses[entityName] = repositoryClass;
 
         return this;
     };
 
     this.unregisterEvent = function(eventName, eventId) {
-        if (this.events[eventName] && this.events[eventName][eventId]) {
-            delete this.events[eventName][eventId];
-            this.events[eventName].length--;
+        if (this.$events[eventName] && this.$events[eventName][eventId]) {
+            delete this.$events[eventName][eventId];
+            this.$events[eventName].length--;
 
-            if (this.events[eventName].length === 0) {
-                delete this.events[eventName];
+            if (this.$events[eventName].length === 0) {
+                delete this.$events[eventName];
             }
         }
 
@@ -372,17 +372,17 @@ function LSDManager(injectStorage) {
 
 function Storage(prefix) {
     if (prefix) {
-        this.prefix = prefix;
+        this.$prefix = prefix;
     } else {
-        this.prefix = 'storage';
+        this.$prefix = 'storage';
     }
 
-    this.separator = '.';
+    this.$separator = '.';
 
     this.get = function(key, defaultValue) {
         var value = localStorage.getItem(
             this.key(
-                [ this.prefix, key ]
+                [ this.$prefix, key ]
             )
         );
 
@@ -402,13 +402,13 @@ function Storage(prefix) {
     };
 
     this.key = function(parts) {
-        return parts.join(this.separator);
+        return parts.join(this.$separator);
     };
 
     this.set = function(key, value) {
         localStorage.setItem(
             this.key(
-                [ this.prefix, key ]
+                [ this.$prefix, key ]
             ),
             JSON.stringify(value)
         );
@@ -419,7 +419,7 @@ function Storage(prefix) {
     this.unset = function(key) {
         localStorage.removeItem(
             this.key(
-                [ this.prefix, key ]
+                [ this.$prefix, key ]
             )
         );
 
@@ -438,17 +438,17 @@ function Storage(prefix) {
   #     # ###### #       ####   ####  #   #    ####  #    #   #
 */
 function Repository(manager, entityName) {
-    this.manager    = manager;
-    this.entityName = entityName;
+    this.$manager    = manager;
+    this.$entityName = entityName;
 
     this.createEntity = this._createEntity = function(data) {
         if (!data) {
             data = {};
         }
 
-        var entity = this.manager.extend(
+        var entity = this.$manager.extend(
             new Entity(this),
-            this.manager.getCompiledEntityClass(entityName)
+            this.$manager.getEntity(entityName)
         );
 
         entity.init();
@@ -489,38 +489,38 @@ function Repository(manager, entityName) {
 
     this.findEntity = this._findEntity = function(id, entityName) {
         if (!entityName) {
-            entityName = this.entityName;
+            entityName = this.$entityName;
         }
 
-        var entityKey = this.manager.storage.key( [ entityName, id ] );
+        var entityKey = this.$manager.storage.key( [ entityName, id ] );
 
-        if (!this.manager.storage.has(entityKey)) {
-            throw new Error('Unknown entity ' + this.entityName + ' with storage key ' + entityKey);
+        if (!this.$manager.storage.has(entityKey)) {
+            throw new Error('Unknown entity ' + this.$entityName + ' with storage key ' + entityKey);
         }
 
         var entity = this.createEntity(
-            this.manager.storage.get(entityKey)
+            this.$manager.storage.get(entityKey)
         );
 
-        entity.__oldId = entity.id;
+        entity.$oldId = entity.id;
 
         return entity;
     };
 
     this.getEntityDefinition = this._getEntityDefinition = function() {
-        return this.manager.getEntityDefinition(this.entityName);
+        return this.$manager.getEntityDefinition(this.$entityName);
     };
 
     this.getEntityStorageData = this._getEntityStorageData = function(entity) {
         var data = {};
 
         for (var field in this.getEntityDefinition().fields) {
-            var storageMethod = this.manager.getMethodName('get', field, 'ForStorage');
+            var storageMethod = this.$manager.getMethodName('get', field, 'ForStorage');
 
-            if (this.manager.checkType(entity[storageMethod], 'function')) {
+            if (this.$manager.checkType(entity[storageMethod], 'function')) {
                 data[field] = entity[storageMethod]();
             } else {
-                data[field] = entity[this.manager.getMethodName('get', field)]();
+                data[field] = entity[this.$manager.getMethodName('get', field)]();
             }
         }
 
@@ -528,13 +528,13 @@ function Repository(manager, entityName) {
     };
 
     this.getIdsStorageKey = this._getIdsStorageKey = function() {
-        return this.manager.storage.key(
-            [ this.entityName, '$$ids' ]
+        return this.$manager.storage.key(
+            [ this.$entityName, '$$ids' ]
         );
     };
 
     this.getIdsStorage = this._getIdsStorage = function() {
-        return this.manager.storage.get(
+        return this.$manager.storage.get(
             this.getIdsStorageKey(),
             []
         );
@@ -544,12 +544,12 @@ function Repository(manager, entityName) {
 
     this.loadEntity = this._loadEntity = function(entity, data) {
         for (var field in data) {
-            var methodStorage = this.manager.getMethodName('set', field, 'FromStorage');
-            var methodSet     = this.manager.getMethodName('set', field);
+            var methodStorage = this.$manager.getMethodName('set', field, 'FromStorage');
+            var methodSet     = this.$manager.getMethodName('set', field);
 
-            if (this.manager.checkType(entity[methodStorage], 'function')) {
+            if (this.$manager.checkType(entity[methodStorage], 'function')) {
                 entity[methodStorage](data[field]);
-            } else if (this.manager.checkType(entity[methodSet], 'function')) {
+            } else if (this.$manager.checkType(entity[methodSet], 'function')) {
                 entity[methodSet](data[field]);
             }
         }
@@ -580,7 +580,7 @@ function Repository(manager, entityName) {
 
         console.group(
             'Deleting %s #%s',
-            this.entityName,
+            this.$entityName,
             id
         );
 
@@ -592,19 +592,19 @@ function Repository(manager, entityName) {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
 
-            this.manager.storage.unset(
-                this.manager.storage.key(
-                    [ this.entityName, id ]
+            this.$manager.storage.unset(
+                this.$manager.storage.key(
+                    [ this.$entityName, id ]
                 )
             );
 
             if (fireEvents) {
-                this.manager.fireEvents('afterRemove', this, id);
+                this.$manager.fireEvents('afterRemove', this, id);
             }
 
             console.log(
                 '%s #%s deleted',
-                this.entityName,
+                this.$entityName,
                 id
             );
         }
@@ -628,7 +628,7 @@ function Repository(manager, entityName) {
 
     this.save = this._save = function(entity, fireEvents) {
         if (entity.getId() === undefined) {
-            entity.setId(this.manager.getNewId());
+            entity.setId(this.$manager.getNewId());
         }
 
         if (fireEvents === undefined) {
@@ -637,12 +637,12 @@ function Repository(manager, entityName) {
 
         console.group(
             'Saving %s #%s',
-            this.entityName,
+            this.$entityName,
             entity.getId()
         );
 
-        if (entity.getId() !== entity.__oldId && entity.__oldId !== null) {
-            this.remove(entity.__oldId, fireEvents);
+        if (entity.getId() !== entity.$oldId && entity.$oldId !== null) {
+            this.remove(entity.$oldId, fireEvents);
         }
 
         var entitiesId = this.getIdsStorage();
@@ -651,23 +651,23 @@ function Repository(manager, entityName) {
             this.setIdsStorage(entitiesId);
         }
 
-        this.manager.storage.set(
-            this.manager.storage.key(
-                [ this.entityName, entity.getId() ]
+        this.$manager.storage.set(
+            this.$manager.storage.key(
+                [ this.$entityName, entity.getId() ]
             ),
             this.getEntityStorageData(entity)
         );
 
-        entity.__oldId = entity.getId();
+        entity.$oldId = entity.getId();
 
         if (fireEvents) {
-            this.manager.fireEvents('afterSave', this, entity);
+            this.$manager.fireEvents('afterSave', this, entity);
         }
 
         console.groupEnd();
         console.log(
             '%s #%s saved',
-            this.entityName,
+            this.$entityName,
             entity.getId()
         );
     };
@@ -685,7 +685,7 @@ function Repository(manager, entityName) {
     };
 
     this.setIdsStorage = this._setIdsStorage = function(entitiesId) {
-        this.manager.storage.set(this.getIdsStorageKey(), entitiesId);
+        this.$manager.storage.set(this.getIdsStorageKey(), entitiesId);
     };
 }
 
@@ -701,23 +701,23 @@ function Repository(manager, entityName) {
 */
 
 function Entity(repository) {
-    this.repository = repository;
+    this.$repository = repository;
 
-    this.__oldId = null;
+    this.$oldId = null;
 
     this.get = this._get = function(field) {
-        return this.repository.manager.fixValueType(
+        return this.$repository.manager.fixValueType(
             this[field],
-            this.repository.getEntityDefinition().fields[field]
+            this.$repository.getEntityDefinition().fields[field]
         );
     };
 
     this.init = function() {};
 
     this.set = this._set = function(field, value) {
-        this[field] = this.repository.manager.fixValueType(
+        this[field] = this.$repository.manager.fixValueType(
             value,
-            this.repository.getEntityDefinition().fields[field]
+            this.$repository.getEntityDefinition().fields[field]
         );
 
         return this;

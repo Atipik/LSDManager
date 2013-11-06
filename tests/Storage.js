@@ -17,15 +17,15 @@ module.exports = {
     testInstance: function() {
         this
             .given(storage = new Storage())
-                .string(storage.prefix)
+                .string(storage.$prefix)
                     .isEqualTo('storage')
-                .string(storage.separator)
+                .string(storage.$separator)
                     .isEqualTo('.')
 
             .given(storage = new Storage('foobar'))
-                .string(storage.prefix)
+                .string(storage.$prefix)
                     .isEqualTo('foobar')
-                .string(storage.separator)
+                .string(storage.$separator)
                     .isEqualTo('.')
         ;
     },
