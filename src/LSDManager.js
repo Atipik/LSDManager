@@ -492,14 +492,14 @@ function Repository(manager, entityName) {
             entityName = this.$entityName;
         }
 
-        var entityKey = this.$manager.storage.key( [ entityName, id ] );
+        var entityKey = this.$manager.$storage.key( [ entityName, id ] );
 
-        if (!this.$manager.storage.has(entityKey)) {
+        if (!this.$manager.$storage.has(entityKey)) {
             throw new Error('Unknown entity ' + this.$entityName + ' with storage key ' + entityKey);
         }
 
         var entity = this.createEntity(
-            this.$manager.storage.get(entityKey)
+            this.$manager.$storage.get(entityKey)
         );
 
         entity.$oldId = entity.id;
@@ -528,13 +528,13 @@ function Repository(manager, entityName) {
     };
 
     this.getIdsStorageKey = this._getIdsStorageKey = function() {
-        return this.$manager.storage.key(
+        return this.$manager.$storage.key(
             [ this.$entityName, '$$ids' ]
         );
     };
 
     this.getIdsStorage = this._getIdsStorage = function() {
-        return this.$manager.storage.get(
+        return this.$manager.$storage.get(
             this.getIdsStorageKey(),
             []
         );
@@ -592,8 +592,8 @@ function Repository(manager, entityName) {
             entitiesId.splice(entitiesId.indexOf(id), 1);
             this.setIdsStorage(entitiesId);
 
-            this.$manager.storage.unset(
-                this.$manager.storage.key(
+            this.$manager.$storage.unset(
+                this.$manager.$storage.key(
                     [ this.$entityName, id ]
                 )
             );
@@ -651,8 +651,8 @@ function Repository(manager, entityName) {
             this.setIdsStorage(entitiesId);
         }
 
-        this.$manager.storage.set(
-            this.$manager.storage.key(
+        this.$manager.$storage.set(
+            this.$manager.$storage.key(
                 [ this.$entityName, entity.getId() ]
             ),
             this.getEntityStorageData(entity)
@@ -685,7 +685,7 @@ function Repository(manager, entityName) {
     };
 
     this.setIdsStorage = this._setIdsStorage = function(entitiesId) {
-        this.$manager.storage.set(this.getIdsStorageKey(), entitiesId);
+        this.$manager.$storage.set(this.getIdsStorageKey(), entitiesId);
     };
 }
 
@@ -706,7 +706,7 @@ function Entity(repository) {
     this.$oldId = null;
 
     this.get = this._get = function(field) {
-        return this.$repository.manager.fixValueType(
+        return this.$repository.$manager.fixValueType(
             this[field],
             this.$repository.getEntityDefinition().fields[field]
         );
@@ -715,7 +715,7 @@ function Entity(repository) {
     this.init = function() {};
 
     this.set = this._set = function(field, value) {
-        this[field] = this.$repository.manager.fixValueType(
+        this[field] = this.$repository.$manager.fixValueType(
             value,
             this.$repository.getEntityDefinition().fields[field]
         );
