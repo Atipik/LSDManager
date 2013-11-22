@@ -676,7 +676,9 @@ function Repository(manager, entityName) {
         console.group('Save collection');
 
         for (var i = 0; i < collection.length; i++) {
-            this.save(collection[i], fireEvents);
+            if (collection[i] instanceof Entity && collection[i].$repository === this) {
+                this.save(collection[i], fireEvents);
+            }
         }
 
         console.groupEnd();
