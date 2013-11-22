@@ -621,11 +621,30 @@ function Repository(manager, entityName) {
         console.group('Remove collection');
 
         for (var i = 0; i < collection.length; i++) {
-
             var id = collection[i] instanceof Entity ? collection[i].getId() : collection[i];
 
             this.remove(id, fireEvents);
         }
+
+        console.groupEnd();
+
+        return this;
+    };
+
+    this.removeDeleted = this._removeDeleted = function(collection, previousIds, fireEvents) {
+        console.group('Remove deleted');
+
+        var i;
+
+        for (i = 0; i < collection.length; i++) {
+            var index = previousIds.indexOf(collection[i].getId());
+
+            if (index !== -1) {
+                previousIds.splice(index, 1);
+            }
+        }
+
+        this.removeCollection(previousIds);
 
         console.groupEnd();
 
