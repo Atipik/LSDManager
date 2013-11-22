@@ -614,11 +614,17 @@ function Repository(manager, entityName) {
         return this;
     };
 
+    /**
+     * Remove collection of objects | object identifiers
+     */
     this.removeCollection = this._removeCollection = function(collection, fireEvents) {
         console.group('Remove collection');
 
         for (var i = 0; i < collection.length; i++) {
-            this.remove(collection[i], fireEvents);
+
+            var id = collection[i] instanceof Entity ? collection[i].getId() : collection[i];
+
+            this.remove(id, fireEvents);
         }
 
         console.groupEnd();
