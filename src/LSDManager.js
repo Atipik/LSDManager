@@ -33,6 +33,14 @@ Entity.prototype.set = Entity.prototype._set = function(field, value) {
     return this;
 };
 
+Entity.prototype.toArray = function() {
+    var data = this.$repository.getEntityStorageData(this);
+
+    data._entityName = this.$repository.$entityName;
+
+    return data;
+};
+
 
 
 /*
@@ -196,6 +204,8 @@ Repository.prototype.query = Repository.prototype._query = function(filter) {
 };
 
 Repository.prototype.remove = Repository.prototype._remove = function(id, fireEvents) {
+    var entity;
+
     if (fireEvents === undefined) {
         fireEvents = true;
     }
@@ -212,6 +222,10 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
     if (indexOf === -1) {
         console.log('Nothing to delete');
     } else {
+        if (fireEvents) {
+            entity = this.findEntity(id);
+        }
+
         entitiesId.splice(entitiesId.indexOf(id), 1);
         this.setIdsStorage(entitiesId);
 
@@ -224,7 +238,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
         this.$manager.deleteFromCache(this.$entityName, id);
 
         if (fireEvents) {
-            this.$manager.fireEvents('afterRemove', this, id);
+            this.$manager.fireEvents('afterRemove', this, entity);
         }
 
         console.log(
@@ -464,8 +478,22 @@ LSDManager.prototype.checkType = LSDManager.prototype._checkType = function(vari
     return this.getType(variable) === type;
 };
 
-LSDManager.prototype.deleteFromCache = LSDManager.prototype._deleteFromCache = function(entityName, entityId) {
-    if (this.hasInCache(entityName, entityId)) {
+LSDManager.prototype.deleteFromCache = LSDManager.prototype._deleteFromCache = function(entity, entityId) {
+    var entityName;
+
+    if (entity instanceof Entity) {
+        entityName = entity.$repository.$entityName;
+
+        if (entityId === undefined) {
+            entityId = entity.getId();
+        }
+    } else {
+        entityName = entity;
+    }
+
+    if (entityId === undefined && this.hasInCache(entityName)) {
+        delete this.$cache[entityName];
+    } else if (entityId !== undefined && this.hasInCache(entityName, entityId)) {
         delete this.$cache[entityName][entityId];
     }
 
@@ -741,6 +769,10 @@ LSDManager.prototype.getType = LSDManager.prototype._getType = function(o) {
 };
 
 LSDManager.prototype.hasInCache = LSDManager.prototype._hasInCache = function(entityName, entityId) {
+    if (entityId === undefined) {
+        return this.$cache[entityName] !== undefined;
+    }
+
     return this.$cache[entityName] !== undefined && this.$cache[entityName][entityId] !== undefined;
 };
 
