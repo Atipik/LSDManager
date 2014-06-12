@@ -210,11 +210,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
         fireEvents = true;
     }
 
-    console.group(
-        'Deleting %s #%s',
-        this.$entityName,
-        id
-    );
+    console.group('Deleting ' + this.$entityName + ' #' + id);
 
     var entitiesId = this.getIdsStorage(),
         indexOf    = entitiesId.indexOf(id);
@@ -241,11 +237,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
             this.$manager.fireEvents('afterRemove', this, entity);
         }
 
-        console.log(
-            '%s #%s deleted',
-            this.$entityName,
-            id
-        );
+        console.log(this.$entityName + ' #' + id + ' deleted');
     }
 
     console.groupEnd();
@@ -300,11 +292,7 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
         fireEvents = true;
     }
 
-    console.group(
-        'Saving %s #%s',
-        this.$entityName,
-        entity.getId()
-    );
+    console.group('Saving ' + this.$entityName + ' #' + entity.getId());
 
     if (entity.getId() !== entity.$oldId && entity.$oldId !== null) {
         this.remove(entity.$oldId, fireEvents);
@@ -332,11 +320,7 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
     }
 
     console.groupEnd();
-    console.log(
-        '%s #%s saved',
-        this.$entityName,
-        entity.getId()
-    );
+    console.log(this.$entityName + ' #' + entity.getId() + ' saved');
 };
 
 Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {
@@ -516,11 +500,7 @@ LSDManager.prototype.fireEvents = LSDManager.prototype._fireEvents = function(ev
     var i;
 
     if (this.$events[eventName] !== undefined) {
-        console.group(
-            'Call %d callback(s) for event %s',
-            this.$events[eventName].length,
-            eventName
-        );
+        console.group('Call ' + this.$events[eventName].length + ' callback(s) for event ' + eventName);
 
         for (i in this.$events[eventName]) {
             if (this.$events[eventName].hasOwnProperty(i) && i !== 'length') {
