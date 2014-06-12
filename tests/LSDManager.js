@@ -108,9 +108,7 @@ module.exports = {
                 .stub(stubConsoleGroup)
                     .wasCalled()
                     .withArguments(
-                        'Call %d callback(s) for event %s',
-                        2,
-                        eventName
+                        'Call 2 callback(s) for event ' + eventName
                     )
 
             .given(lsd = new LSDManager())
@@ -130,9 +128,7 @@ module.exports = {
                 .stub(stubConsoleGroup)
                     .wasCalled()
                     .withArguments(
-                        'Call %d callback(s) for event %s',
-                        1,
-                        eventName
+                        'Call 1 callback(s) for event ' + eventName
                     )
         ;
     },
