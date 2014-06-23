@@ -168,6 +168,30 @@ Repository.prototype.getIdsStorage = Repository.prototype._getIdsStorage = funct
 
 Repository.prototype.init = function() {};
 
+Repository.prototype.isValid = Repository.prototype._isValid = function(entity) {
+    var relations = this.getEntityDefinition().relations;
+
+    for (var field in relations) {
+        var relation = relations[field];
+
+        var data = entity.get(field);
+
+        if (relation.type === 'one') {
+            if (data < 0) {
+                return false;
+            }
+        } else if (relation.type === 'many') {
+            for (var i = 0; i < data.length; i++) {
+                if (data[i] < 0) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+};
+
 Repository.prototype.loadEntity = Repository.prototype._loadEntity = function(entity, data) {
     var field, methodStorage, methodSet;
 
@@ -337,6 +361,51 @@ Repository.prototype.saveCollection = Repository.prototype._saveCollection = fun
     console.groupEnd();
 
     return this;
+};
+
+Repository.prototype.setDependencies = Repository.prototype._setDependencies = function(oldId, entity) {
+    var entityDefinition = this.getEntityDefinition();
+
+    for (var entityName in entityDefinition.dependencies) {
+        var dependency = entityDefinition.dependencies[entityName];
+
+        var repository = this.$manager.getRepository(entityName);
+
+        var entities;
+        if (dependency.type === 'one') {
+            entities = repository.findBy(dependency.field, oldId);
+        } else if (dependency.type === 'many') {
+            entities = repository.query(
+                function(currentEntity) {
+                    return currentEntity.get(dependency.field).indexOf(oldId) !== -1;
+                }
+            );
+        }
+
+        for (var i = 0; i < entities.length; i++) {
+            if (dependency.type === 'one') {
+                entities[i].set(
+                    dependency.field,
+                    entity.getId()
+                );
+            } else if (dependency.type === 'many') {
+                var data = entities[i].get(
+                    dependency.field
+                );
+
+                var index = data.indexOf(oldId);
+
+                data[index] = entity.getId();
+
+                entities[i].set(
+                    dependency.field,
+                    data
+                );
+            }
+        }
+
+        repository.saveCollection(entities);
+    }
 };
 
 Repository.prototype.setIdsStorage = Repository.prototype._setIdsStorage = function(entitiesId) {
@@ -826,9 +895,13 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
         entityDefinition.relations = {};
     }
 
+    entityDefinition.dependencies = {};
+
     this.$entityDefinitions[entityName] = entityDefinition;
 
     this.setEntity(entityName, null);
+
+    this.updateDependencies();
 
     return this;
 };
@@ -850,4 +923,24 @@ LSDManager.prototype.unregisterEvent = LSDManager.prototype._unregisterEvent = f
     }
 
     return this;
+};
+
+LSDManager.prototype.updateDependencies = function() {
+    for(var entityName in this.$entityDefinitions) {
+        var entityDefinition = this.$entityDefinitions[entityName];
+
+        for (var field in entityDefinition.relations) {
+            var relation = entityDefinition.relations[field];
+            relation.type = relation.type ? relation.type : 'one';
+
+            var relatedEntityDefinition = this.getEntityDefinition(relation.entity);
+
+            if (relatedEntityDefinition.dependencies) {
+                relatedEntityDefinition.dependencies[entityName] = {
+                    field: field,
+                    type : relation.type
+                };
+            }
+        }
+    }
 };
