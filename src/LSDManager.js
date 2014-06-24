@@ -348,17 +348,17 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
 };
 
 Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {
-    var i;
+    if (collection.length > 0) {
+        console.group('Save collection');
 
-    console.group('Save collection');
-
-    for (i = 0; i < collection.length; i++) {
-        if (collection[i] instanceof Entity && collection[i].$repository === this) {
-            this.save(collection[i], fireEvents);
+        for (var i = 0; i < collection.length; i++) {
+            if (collection[i] instanceof Entity && collection[i].$repository === this) {
+                this.save(collection[i], fireEvents);
+            }
         }
-    }
 
-    console.groupEnd();
+        console.groupEnd();
+    }
 
     return this;
 };
