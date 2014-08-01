@@ -288,21 +288,23 @@ Repository.prototype.removeCollection = Repository.prototype._removeCollection =
 };
 
 Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
-    console.group('Remove deleted');
+    if (previousIds.length > 0) {
+        console.group('Remove deleted');
 
-    var i, index;
+        var i, index;
 
-    for (i = 0; i < collection.length; i++) {
-        index = previousIds.indexOf(collection[i].getId());
+        for (i = 0; i < collection.length; i++) {
+            index = previousIds.indexOf(collection[i].getId());
 
-        if (index !== -1) {
-            previousIds.splice(index, 1);
+            if (index !== -1) {
+                previousIds.splice(index, 1);
+            }
         }
+
+        this.removeCollection(previousIds);
+
+        console.groupEnd();
     }
-
-    this.removeCollection(previousIds);
-
-    console.groupEnd();
 
     return this;
 };
@@ -367,44 +369,50 @@ Repository.prototype.setDependencies = Repository.prototype._setDependencies = f
     var entityDefinition = this.getEntityDefinition();
 
     for (var entityName in entityDefinition.dependencies) {
-        var dependency = entityDefinition.dependencies[entityName];
-
         var repository = this.$manager.getRepository(entityName);
 
-        var entities;
-        if (dependency.type === 'one') {
-            entities = repository.findBy(dependency.field, oldId);
-        } else if (dependency.type === 'many') {
-            entities = repository.query(
-                function(currentEntity) {
-                    return currentEntity.get(dependency.field).indexOf(oldId) !== -1;
-                }
-            );
-        }
+        for (var field in entityDefinition.dependencies[entityName]) {
+            var dependency = entityDefinition.dependencies[entityName][field];
 
-        for (var i = 0; i < entities.length; i++) {
+            var entities;
             if (dependency.type === 'one') {
-                entities[i].set(
-                    dependency.field,
-                    entity.getId()
-                );
+                entities = repository.findBy(field, oldId);
             } else if (dependency.type === 'many') {
-                var data = entities[i].get(
-                    dependency.field
-                );
-
-                var index = data.indexOf(oldId);
-
-                data[index] = entity.getId();
-
-                entities[i].set(
-                    dependency.field,
-                    data
+                entities = repository.query(
+                    function(currentEntity) {
+                        return currentEntity.get(field).indexOf(oldId) !== -1;
+                    }
                 );
             }
-        }
 
-        repository.saveCollection(entities);
+            for (var i = 0; i < entities.length; i++) {
+                console.log(
+                    'Update relation ID in entity "' + entityName + '" #' + entities[i].getId() +
+                    ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
+                );
+                if (dependency.type === 'one') {
+                    entities[i].set(
+                        field,
+                        entity.getId()
+                    );
+                } else if (dependency.type === 'many') {
+                    var data = entities[i].get(
+                        field
+                    );
+
+                    var index = data.indexOf(oldId);
+
+                    data[index] = entity.getId();
+
+                    entities[i].set(
+                        field,
+                        data
+                    );
+                }
+            }
+
+            repository.saveCollection(entities);
+        }
     }
 };
 
@@ -936,8 +944,11 @@ LSDManager.prototype.updateDependencies = function() {
             var relatedEntityDefinition = this.getEntityDefinition(relation.entity);
 
             if (relatedEntityDefinition.dependencies) {
-                relatedEntityDefinition.dependencies[entityName] = {
-                    field: field,
+                if (relatedEntityDefinition.dependencies[entityName] === undefined) {
+                    relatedEntityDefinition.dependencies[entityName] = {};
+                }
+
+                relatedEntityDefinition.dependencies[entityName][field] = {
                     type : relation.type
                 };
             }
