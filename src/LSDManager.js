@@ -33,7 +33,7 @@ Entity.prototype.set = Entity.prototype._set = function(field, value) {
     return this;
 };
 
-Entity.prototype.toArray = function() {
+Entity.prototype.toArray = Entity.prototype.toJSON = function() {
     var data = this.$repository.getEntityStorageData(this);
 
     data._entityName = this.$repository.$entityName;
