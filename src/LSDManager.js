@@ -34,7 +34,7 @@ Entity.prototype.set = Entity.prototype._set = function(field, value) {
 };
 
 Entity.prototype.toArray = Entity.prototype.toJSON = function() {
-    var data = this.$repository.getEntityStorageData(this);
+    var data = this.$repository.getEntityStorageData(this, false, false);
 
     data._entityName = this.$repository.$entityName;
 
@@ -103,7 +103,7 @@ Repository.prototype.findEntity = Repository.prototype._findEntity = function(id
     }
 
     if (!this.$manager.hasInCache(entityName, id)) {
-        entityKey = this.$manager.$storage.key( [ entityName, id ] );
+        entityKey = this.$manager.$storage.key( [ this.getStorageKeyName(entityName), id ] );
 
         if (!this.$manager.$storage.has(entityKey)) {
             throw new Error('Unknown entity ' + this.$entityName + ' with storage key ' + entityKey);
@@ -135,17 +135,31 @@ Repository.prototype.getEntityDefinition = Repository.prototype._getEntityDefini
     return this.$manager.getEntityDefinition(this.$entityName);
 };
 
-Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStorageData = function(entity) {
+Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStorageData = function(entity, useShortCut, removeNull) {
     var data = {}, field, storageMethod;
+
+    if (useShortCut === undefined) {
+        useShortCut = true;
+    }
+
+    if (removeNull === undefined) {
+        removeNull = true;
+    }
 
     for (field in this.getEntityDefinition().fields) {
         if (this.getEntityDefinition().fields.hasOwnProperty(field)) {
             storageMethod = this.$manager.getMethodName('get', field, 'ForStorage');
 
+            var dataKey = useShortCut ? (this.getEntityDefinition().fields[field].shortcut || field) : field;
+
             if (this.$manager.checkType(entity[storageMethod], 'function')) {
-                data[field] = entity[storageMethod]();
+                data[dataKey] = entity[storageMethod]();
             } else {
-                data[field] = entity[this.$manager.getMethodName('get', field)]();
+                data[dataKey] = entity[this.$manager.getMethodName('get', field)]();
+            }
+
+            if (removeNull && data[dataKey] === null) {
+                delete data[dataKey];
             }
         }
     }
@@ -153,9 +167,17 @@ Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStora
     return data;
 };
 
+Repository.prototype.getStorageKeyName = Repository.prototype._getStorageKeyName = function(entityName) {
+    if (entityName === undefined) {
+        entityName = this.$entityName;
+    }
+
+    return this.$manager.getEntityDefinition(entityName).shortcut || entityName;
+};
+
 Repository.prototype.getIdsStorageKey = Repository.prototype._getIdsStorageKey = function() {
     return this.$manager.$storage.key(
-        [ this.$entityName, '$$ids' ]
+        [ this.getStorageKeyName(), '$$' ]
     );
 };
 
@@ -195,15 +217,21 @@ Repository.prototype.isValid = Repository.prototype._isValid = function(entity) 
 Repository.prototype.loadEntity = Repository.prototype._loadEntity = function(entity, data) {
     var field, methodStorage, methodSet;
 
+    var shortcuts = this.getEntityDefinition().shortcuts;
+
     for (field in data) {
         if (data.hasOwnProperty(field)) {
+            var value = data[field];
+
+            field = shortcuts[field] || field;
+
             methodStorage = this.$manager.getMethodName('set', field, 'FromStorage');
             methodSet     = this.$manager.getMethodName('set', field);
 
             if (this.$manager.checkType(entity[methodStorage], 'function')) {
-                entity[methodStorage](data[field]);
+                entity[methodStorage](value);
             } else if (this.$manager.checkType(entity[methodSet], 'function')) {
-                entity[methodSet](data[field]);
+                entity[methodSet](value);
             }
         }
     }
@@ -251,7 +279,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
 
         this.$manager.$storage.unset(
             this.$manager.$storage.key(
-                [ this.$entityName, id ]
+                [ this.getStorageKeyName(), id ]
             )
         );
 
@@ -332,7 +360,7 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
 
     this.$manager.$storage.set(
         this.$manager.$storage.key(
-            [ this.$entityName, entity.getId() ]
+            [ this.getStorageKeyName(), entity.getId() ]
         ),
         this.getEntityStorageData(entity)
     );
@@ -895,12 +923,53 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
 
     if (entityDefinition.fields.id === undefined) {
         entityDefinition.fields.id = {
-            type: 'integer'
+            type     : 'integer',
+            shortcut : '_'
         };
     }
 
     if (entityDefinition.relations === undefined) {
         entityDefinition.relations = {};
+    }
+
+    // check entity shortcut
+    if (entityDefinition.shortcut) {
+        for (var en in this.$entityDefinitions) {
+            if (this.$entityDefinitions.hasOwnProperty(en)) {
+                if (this.$entityDefinitions[en].shortcut === entityDefinition.shortcut) {
+                    console.error(
+                        'Try to add a new entity "' + entityName + '" definition ' +
+                        'with shortcut "' + entityDefinition.shortcut + '" ' +
+                        'but it already exists in "' + en + '" entity.'
+                    );
+
+                    return;
+                }
+            }
+        }
+    }
+
+    // check fields shortcuts
+    entityDefinition.shortcuts = {};
+    for (var field in entityDefinition.fields) {
+        if (entityDefinition.fields.hasOwnProperty(field)) {
+            var shortcut = entityDefinition.fields[field].shortcut;
+
+            if (shortcut) {
+                if (entityDefinition.shortcuts[shortcut]) {
+                    console.error(
+                        'Try to add a new entity "' + entityName + '" definition ' +
+                        'with a field "' + field + '" ' +
+                        'with a shortcut "' + shortcut + '" ' +
+                        'but it already exists for field "' + entityDefinition.shortcuts[shortcut] + '".'
+                    );
+
+                    return;
+                }
+
+                entityDefinition.shortcuts[shortcut] = field;
+            }
+        }
     }
 
     entityDefinition.dependencies = {};
