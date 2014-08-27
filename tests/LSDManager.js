@@ -449,7 +449,7 @@ module.exports = {
                 .object(lsd.setEntityDefinition(entityName, {}))
                     .isIdenticalTo(lsd)
                 .object(lsd.getEntityDefinition(entityName))
-                    .isEqualTo({ fields: { id: { type: 'integer' }}, relations: {}, dependencies: {}})
+                    .isEqualTo({ fields: { id: { type: 'integer', shortcut: '_' }}, relations: {}, dependencies: {}, shortcuts: { _: 'id' }})
         ;
     },
     testSetGetRepositoryClass: function() {
