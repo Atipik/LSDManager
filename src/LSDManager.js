@@ -103,7 +103,9 @@ Repository.prototype.findEntity = Repository.prototype._findEntity = function(id
     }
 
     if (!this.$manager.hasInCache(entityName, id)) {
-        entityKey = this.$manager.$storage.key( [ this.getStorageKeyName(entityName), id ] );
+        entityKey = this.$manager.$storage.key(
+            [ this.getStorageKeyName(entityName), id ]
+        );
 
         if (!this.$manager.$storage.has(entityKey)) {
             throw new Error('Unknown entity ' + this.$entityName + ' with storage key ' + entityKey);
@@ -139,7 +141,7 @@ Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStora
     var data = {}, field, storageMethod;
 
     if (useShortCut === undefined) {
-        useShortCut = true;
+        useShortCut = this.$manager.$useShortcut;
     }
 
     if (removeNull === undefined) {
@@ -172,7 +174,7 @@ Repository.prototype.getStorageKeyName = Repository.prototype._getStorageKeyName
         entityName = this.$entityName;
     }
 
-    return this.$manager.getEntityDefinition(entityName).shortcut || entityName;
+    return this.$manager.$useShortcut ? (this.$manager.getEntityDefinition(entityName).shortcut || entityName) : entityName;
 };
 
 Repository.prototype.getIdsStorageKey = Repository.prototype._getIdsStorageKey = function() {
@@ -532,6 +534,8 @@ Storage.prototype.unset = function(key) {
 function LSDManager(injectStorage) {
     'use strict';
 
+    this.$databaseVersion   = null;
+    this.$migrations        = [];
     this.$lastId            = 0;
     this.$entity            = {};
     this.$entityClasses     = {};
@@ -540,6 +544,8 @@ function LSDManager(injectStorage) {
     this.$events            = {};
     this.$repositories      = {};
     this.$repositoryClasses = {};
+
+    this.$useShortcut       = true;
 
     if (injectStorage) {
         this.$storage = injectStorage;
@@ -552,6 +558,10 @@ function LSDManager(injectStorage) {
     // call init method
     this.init();
 }
+
+LSDManager.prototype.addMigration = LSDManager.prototype._addMigration = function(migration) {
+    this.$migrations.push(migration);
+};
 
 LSDManager.prototype.addToCache = LSDManager.prototype._addToCache = function(entity) {
     if (this.$cache[entity.$repository.$entityName] === undefined) {
@@ -707,6 +717,14 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
     return value;
 };
 
+LSDManager.prototype.getCurrentDatabaseVersion = LSDManager.prototype._getCurrentDatabaseVersion = function() {
+    return parseInt(this.$storage.get('version') || 0, 10);
+};
+
+LSDManager.prototype.getDatabaseVersion = LSDManager.prototype._getCurrentDatabaseVersion = function() {
+    return this.$databaseVersion;
+};
+
 LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(entityName) {
     if (!this.$entity[entityName]) {
         var getGetter, getSetter, methodGet, methodSet,
@@ -801,6 +819,18 @@ LSDManager.prototype.getNewId = LSDManager.prototype._getNewId = function(idFact
     return id;
 };
 
+LSDManager.prototype.getRepositories = LSDManager.prototype._getRepositories = function() {
+    var repositories = [];
+
+    for (var entityName in this.$entityDefinitions) {
+        repositories.push(
+            this.getRepository(entityName)
+        );
+    }
+
+    return repositories;
+};
+
 LSDManager.prototype.getRepository = LSDManager.prototype._getRepository = function(entityName) {
     if (!this.isValidEntity(entityName)) {
         throw new Error('Unknown repository for ' + entityName);
@@ -879,6 +909,32 @@ LSDManager.prototype.isValidEntity = LSDManager.prototype._isValidEntity = funct
     return false;
 };
 
+LSDManager.prototype.migrate = LSDManager.prototype._migrate = function() {
+    var start = new Date().getTime();
+
+    for (var i = 0; i < this.$migrations.length; i++) {
+        this.$migrations[i](this);
+    }
+
+    this.storeDatabaseVersion();
+
+    console.log('Migration done in ' + (new Date().getTime() - start) + 'ms');
+};
+
+LSDManager.prototype.needMigration = LSDManager.prototype._needMigration = function() {
+    var currentVersion = this.getCurrentDatabaseVersion();
+
+    if (currentVersion === this.$databaseVersion) {
+        return false;
+    }
+
+    if (currentVersion < this.$databaseVersion) {
+        return true;
+    }
+
+    throw new Error('Incoherent version. Must be in version "' + this.$databaseVersion + '" but "' + currentVersion + '" found.');
+};
+
 LSDManager.prototype.registerEvent = LSDManager.prototype._registerEvent = function(eventName, callback) {
     if (this.$events[eventName] === undefined) {
         this.$events[eventName] = { length: 0 };
@@ -900,6 +956,10 @@ LSDManager.prototype.setEntity = LSDManager.prototype._setEntity = function(enti
     this.$entity[entityName] = compiledEntityClass;
 
     return this;
+};
+
+LSDManager.prototype.setDatabaseVersion = LSDManager.prototype._setDatabaseVersion = function(version) {
+    this.$databaseVersion = parseInt(version, 10);
 };
 
 LSDManager.prototype.setDataPrefix = LSDManager.prototype._setDataPrefix = function(prefix) {
@@ -989,6 +1049,10 @@ LSDManager.prototype.setRepositoryClass = LSDManager.prototype._setRepositoryCla
     return this;
 };
 
+LSDManager.prototype.storeDatabaseVersion = LSDManager.prototype._storeDatabaseVersion = function() {
+    this.$storage.set('version', this.$databaseVersion);
+};
+
 LSDManager.prototype.unregisterEvent = LSDManager.prototype._unregisterEvent = function(eventName, eventId) {
     if (this.$events[eventName] && this.$events[eventName][eventId]) {
         delete this.$events[eventName][eventId];
@@ -1002,7 +1066,7 @@ LSDManager.prototype.unregisterEvent = LSDManager.prototype._unregisterEvent = f
     return this;
 };
 
-LSDManager.prototype.updateDependencies = function() {
+LSDManager.prototype.updateDependencies = LSDManager.prototype._updateDependencies = function() {
     for(var entityName in this.$entityDefinitions) {
         var entityDefinition = this.$entityDefinitions[entityName];
 
@@ -1023,4 +1087,8 @@ LSDManager.prototype.updateDependencies = function() {
             }
         }
     }
+};
+
+LSDManager.prototype.useShortcuts = LSDManager.prototype._useShortcuts = function(useShortcut) {
+    this.$useShortcut = !!useShortcut;
 };
