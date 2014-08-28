@@ -179,7 +179,7 @@ Repository.prototype.getStorageKeyName = Repository.prototype._getStorageKeyName
 
 Repository.prototype.getIdsStorageKey = Repository.prototype._getIdsStorageKey = function() {
     return this.$manager.$storage.key(
-        [ this.getStorageKeyName(), '$$' ]
+        [ this.getStorageKeyName(), this.$manager.$IDKEY ]
     );
 };
 
@@ -545,6 +545,7 @@ function LSDManager(injectStorage) {
     this.$repositories      = {};
     this.$repositoryClasses = {};
 
+    this.$IDKEY             = '_';
     this.$useShortcut       = true;
 
     if (injectStorage) {
