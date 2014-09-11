@@ -712,6 +712,15 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                     value = String(value);
                 }
             break;
+
+            case 'date':
+                value = new Date(value);
+                value.setHours(0, 0, 0, 0);
+            break;
+
+            case 'datetime':
+                value = new Date(value);
+            break;
         }
     }
 
@@ -728,19 +737,34 @@ LSDManager.prototype.getDatabaseVersion = LSDManager.prototype._getCurrentDataba
 
 LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(entityName) {
     if (!this.$entity[entityName]) {
-        var getGetter, getSetter, methodGet, methodSet,
-            field;
-
-        getGetter = function(field) {
+        var getGetter = function(field) {
             return function() {
                 return this.get(field);
             };
         };
 
-        getSetter = function(field) {
+        var getSetter = function(field) {
             return function(value) {
                 return this.set(field, value);
             };
+        };
+
+        var getGetterForStorage = function(field, type) {
+            if (type === 'date') {
+                return function() {
+                    var d = this.get(field);
+
+                    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+                };
+            }
+
+            if (type === 'datetime') {
+                return function() {
+                    var d = this.get(field);
+
+                    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds();
+                };
+            }
         };
 
         this.$entity[entityName] = this.extend(
@@ -748,18 +772,51 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             this.getEntityClass(entityName)
         );
 
+        var field, method;
+
         for (field in this.getEntityDefinition(entityName).fields) {
             if (this.getEntityDefinition(entityName).fields.hasOwnProperty(field)) {
-                methodGet = this.getMethodName('get', field);
+                method = this.getMethodName('get', field);
 
-                if (this.$entity[entityName][methodGet] === undefined) {
-                    this.$entity[entityName][methodGet] = getGetter(field);
+                if (this.$entity[entityName][method] === undefined) {
+                    this.$entity[entityName][method] = getGetter(field);
                 }
 
-                methodSet = this.getMethodName('set', field);
+                method = this.getMethodName('set', field);
 
-                if (this.$entity[entityName][methodSet] === undefined) {
-                    this.$entity[entityName][methodSet] = getSetter(field);
+                if (this.$entity[entityName][method] === undefined) {
+                    this.$entity[entityName][method] = getSetter(field);
+                }
+
+                method = this.getMethodName('get', field, 'ForStorage');
+
+                if (this.$entity[entityName][method] === undefined) {
+                    var getter = getGetterForStorage(field, this.getEntityDefinition(entityName).fields[field].type);
+
+                    if (getter) {
+                        this.$entity[entityName][method] = getter;
+                    }
+                }
+            }
+        }
+
+        var getRelationGetter = function(field, entity) {
+            return function() {
+                return this.$repository.$manager.getRepository(entity).findOneBy(
+                    'id',
+                    this.get(field)
+                );
+            };
+        };
+
+        for (field in this.getEntityDefinition(entityName).relations) {
+            if (this.getEntityDefinition(entityName).relations.hasOwnProperty(field)) {
+                var relation = this.getEntityDefinition(entityName).relations[field];
+
+                method = this.getMethodName('get', relation.entity);
+
+                if (this.$entity[entityName][method] === undefined) {
+                    this.$entity[entityName][method] = getRelationGetter(field, relation.entity);
                 }
             }
         }
