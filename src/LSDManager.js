@@ -1054,7 +1054,7 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     if (entityDefinition.shortcut) {
         for (var en in this.$entityDefinitions) {
             if (this.$entityDefinitions.hasOwnProperty(en)) {
-                if (this.$entityDefinitions[en].shortcut === entityDefinition.shortcut) {
+                if (en !== entityName && this.$entityDefinitions[en].shortcut === entityDefinition.shortcut) {
                     console.error(
                         'Try to add a new entity "' + entityName + '" definition ' +
                         'with shortcut "' + entityDefinition.shortcut + '" ' +
