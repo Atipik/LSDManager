@@ -750,11 +750,23 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
         };
 
         var getGetterForStorage = function(field, type) {
+            var strpad = function(input, padLength) {
+                var string = String(input);
+
+                padLength = padLength || 2;
+
+                while (string.length < padLength) {
+                    string = '0' + string;
+                }
+
+                return string;
+            };
+
             if (type === 'date') {
                 return function() {
                     var d = this.get(field);
 
-                    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+                    return d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
                 };
             }
 
@@ -762,7 +774,12 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 return function() {
                     var d = this.get(field);
 
-                    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '.' + d.getMilliseconds();
+                    var datetime = '';
+                    datetime += d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
+                    datetime += 'T';
+                    datetime += strpad(d.getHours()) + ':' + strpad(d.getMinutes()) + ':' + strpad(d.getSeconds()) + '.' + strpad(d.getMilliseconds(), 3);
+
+                    return datetime;
                 };
             }
         };
