@@ -776,10 +776,34 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                     var datetime = '';
                     datetime += d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
-                    datetime += 'T';
+                    datetime += ' ';
                     datetime += strpad(d.getHours()) + ':' + strpad(d.getMinutes()) + ':' + strpad(d.getSeconds()) + '.' + strpad(d.getMilliseconds(), 3);
 
                     return datetime;
+                };
+            }
+        };
+
+        var getSetterFromStorage = function(field, type) {
+            if (type === 'datetime') {
+                return function(value) {
+                    var date = new Date();
+
+                    var parts = value.split(/[\sT]/);
+
+                    var dateParts = parts[0].split('-');
+                    date.setFullYear(dateParts[0], dateParts[1] - 1, dateParts[2]);
+
+                    var timeParts = parts[1].split('.');
+                    var milliseconds = 0;
+                    if (timeParts.length > 1) {
+                        milliseconds = timeParts[1];
+                    }
+                    timeParts = timeParts[0].split(':');
+
+                    date.setHours(timeParts[0], timeParts[1], timeParts[2], milliseconds);
+
+                    return this.set(field, date);
                 };
             }
         };
@@ -812,6 +836,16 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                     if (getter) {
                         this.$entity[entityName][method] = getter;
+                    }
+                }
+
+                method = this.getMethodName('set', field, 'FromStorage');
+
+                if (this.$entity[entityName][method] === undefined) {
+                    var setter = getSetterFromStorage(field, this.getEntityDefinition(entityName).fields[field].type);
+
+                    if (setter) {
+                        this.$entity[entityName][method] = setter;
                     }
                 }
             }
