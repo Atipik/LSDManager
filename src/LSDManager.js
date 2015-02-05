@@ -274,6 +274,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
     } else {
         if (fireEvents) {
             entity = this.findEntity(id);
+            console.log(entity);
         }
 
         entitiesId.splice(entitiesId.indexOf(id), 1);
@@ -349,6 +350,7 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
     }
 
     console.group('Saving ' + this.$entityName + ' #' + entity.getId());
+    console.log(entity);
 
     if (entity.getId() !== entity.$oldId && entity.$oldId !== null) {
         this.remove(entity.$oldId, fireEvents);
