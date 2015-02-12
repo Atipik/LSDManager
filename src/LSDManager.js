@@ -768,11 +768,11 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 return function() {
                     var d = this.get(field);
 
-                    if (d === null) {
-                        return null;
+                    if (d instanceof Date) {
+                        return d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
                     }
 
-                    return d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
+                    return null;
                 };
             }
 
@@ -780,16 +780,16 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 return function() {
                     var d = this.get(field);
 
-                    if (d === null) {
-                        return null;
+                    if (d instanceof Date) {
+                        var datetime = '';
+                        datetime += d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
+                        datetime += ' ';
+                        datetime += strpad(d.getHours()) + ':' + strpad(d.getMinutes()) + ':' + strpad(d.getSeconds()) + '.' + strpad(d.getMilliseconds(), 3);
+
+                        return datetime;
                     }
 
-                    var datetime = '';
-                    datetime += d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
-                    datetime += ' ';
-                    datetime += strpad(d.getHours()) + ':' + strpad(d.getMinutes()) + ':' + strpad(d.getSeconds()) + '.' + strpad(d.getMilliseconds(), 3);
-
-                    return datetime;
+                    return null;
                 };
             }
         };
