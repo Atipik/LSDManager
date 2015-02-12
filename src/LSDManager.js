@@ -768,6 +768,10 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 return function() {
                     var d = this.get(field);
 
+                    if (d === null) {
+                        return null;
+                    }
+
                     return d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
                 };
             }
@@ -775,6 +779,10 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             if (type === 'datetime') {
                 return function() {
                     var d = this.get(field);
+
+                    if (d === null) {
+                        return null;
+                    }
 
                     var datetime = '';
                     datetime += d.getFullYear() + '-' + strpad(d.getMonth() + 1) + '-' + strpad(d.getDate());
