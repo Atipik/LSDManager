@@ -95,6 +95,14 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
     );
 };
 
+Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
+    return this.query(
+        function(entity) {
+            return collection.indexOf(entity[field]) !== -1;
+        }
+    );
+};
+
 Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName) {
     var entityKey, entity;
 
