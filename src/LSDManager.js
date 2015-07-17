@@ -878,14 +878,31 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             };
         };
 
+        var getRelationsGetter = function(field, entity) {
+            return function() {
+                return this.$repository.$manager.getRepository(entity).findByCollection(
+                    'id',
+                    this.get(field)
+                );
+            };
+        };
+
         for (field in this.getEntityDefinition(entityName).relations) {
             if (this.getEntityDefinition(entityName).relations.hasOwnProperty(field)) {
                 var relation = this.getEntityDefinition(entityName).relations[field];
 
-                method = this.getMethodName('get', relation.entity);
+                method = this.getMethodName('get', this.getRelationName(relation));
 
                 if (this.$entity[entityName][method] === undefined) {
-                    this.$entity[entityName][method] = getRelationGetter(field, relation.entity);
+                    var relationGetterMethod;
+
+                    if (relation.type === 'many') {
+                        relationGetterMethod = getRelationsGetter;
+                    } else {
+                        relationGetterMethod = getRelationGetter;
+                    }
+
+                    this.$entity[entityName][method] = relationGetterMethod(field, relation.entity);
                 }
             }
         }
@@ -944,6 +961,20 @@ LSDManager.prototype.getNewId = LSDManager.prototype._getNewId = function(idFact
     this.$lastId = id;
 
     return id;
+};
+
+LSDManager.prototype.getRelationName = LSDManager.prototype._getRelationName = function(relation) {
+    var name = relation.name || relation.entity;
+
+    if (relation.type === 'many') {
+        if (name.substr(-1) === 'y') {
+            name = name.substr(0, name.length - 1) + 'ies';
+        } else {
+            name += 's';
+        }
+    }
+
+    return name;
 };
 
 LSDManager.prototype.getRepositories = LSDManager.prototype._getRepositories = function() {
