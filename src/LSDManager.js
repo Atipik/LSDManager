@@ -265,11 +265,22 @@ Repository.prototype.query = Repository.prototype._query = function(filter) {
     return entities;
 };
 
-Repository.prototype.remove = Repository.prototype._remove = function(id, fireEvents) {
-    var entity;
+Repository.prototype.remove = Repository.prototype._remove = function(data, fireEvents) {
+    var entity, id;
 
     if (fireEvents === undefined) {
         fireEvents = true;
+    }
+
+    if (data instanceof Entity) {
+        entity = data;
+        id     = entity.getId();
+    } else {
+        id     = data;
+
+        if (fireEvents) {
+            entity = this.findEntity(id);
+        }
     }
 
     console.group('Deleting ' + this.$entityName + ' #' + id);
@@ -281,7 +292,6 @@ Repository.prototype.remove = Repository.prototype._remove = function(id, fireEv
         console.log('Nothing to delete');
     } else {
         if (fireEvents) {
-            entity = this.findEntity(id);
             console.log(entity);
         }
 
@@ -708,7 +718,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                     }
 
                     value = tmp;
-                } else {
+                } else if (valueType !== 'object') {
                     value = {
                         0: value
                     };
