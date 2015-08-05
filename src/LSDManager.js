@@ -103,14 +103,18 @@ Repository.prototype.findByCollection = Repository.prototype._findByCollection =
     );
 };
 
-Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName) {
+Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache) {
     var entityKey, entity;
 
     if (!entityName) {
         entityName = this.$entityName;
     }
 
-    if (!this.$manager.hasInCache(entityName, id)) {
+    if (useCache === undefined) {
+        useCache = true;
+    }
+
+    if (!useCache || !this.$manager.hasInCache(entityName, id)) {
         entityKey = this.$manager.$storage.key(
             [ this.getStorageKeyName(entityName), id ]
         );
@@ -279,7 +283,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
         id     = data;
 
         if (fireEvents) {
-            entity = this.findEntity(id);
+            entity = this.findEntity(id, null, false);
         }
     }
 
@@ -815,21 +819,27 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
         var getSetterFromStorage = function(field, type) {
             if (type === 'datetime') {
                 return function(value) {
-                    var date = new Date();
+                    var date;
 
-                    var parts = value.split(/[\sT]/);
+                    if (value instanceof Date) {
+                        date = value;
+                    } else {
+                        date = new Date();
 
-                    var dateParts = parts[0].split('-');
-                    date.setFullYear(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                        var parts = value.split(/[\sT]/);
 
-                    var timeParts = parts[1].split('.');
-                    var milliseconds = 0;
-                    if (timeParts.length > 1) {
-                        milliseconds = timeParts[1];
+                        var dateParts = parts[0].split('-');
+                        date.setFullYear(dateParts[0], dateParts[1] - 1, dateParts[2]);
+
+                        var timeParts = parts[1].split('.');
+                        var milliseconds = 0;
+                        if (timeParts.length > 1) {
+                            milliseconds = timeParts[1];
+                        }
+                        timeParts = timeParts[0].split(':');
+
+                        date.setHours(timeParts[0], timeParts[1], timeParts[2], milliseconds);
                     }
-                    timeParts = timeParts[0].split(':');
-
-                    date.setHours(timeParts[0], timeParts[1], timeParts[2], milliseconds);
 
                     return this.set(field, date);
                 };
