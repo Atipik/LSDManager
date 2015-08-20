@@ -205,12 +205,25 @@ Repository.prototype.getIdsStorage = Repository.prototype._getIdsStorage = funct
 Repository.prototype.init = function() {};
 
 Repository.prototype.isValid = Repository.prototype._isValid = function(entity) {
-    var relations = this.getEntityDefinition().relations;
+    var entityDefinition = this.getEntityDefinition();
 
-    for (var field in relations) {
-        var relation = relations[field];
+    var fields = entityDefinition.fields;
 
-        var data = entity.get(field);
+    for (var fieldName in fields) {
+        var data = entity.get(fieldName);
+
+        if (fields[fieldName].nullable === false
+        && entity.get(fieldName) === null) {
+            return false;
+        }
+    }
+
+    var relations = entityDefinition.relations;
+
+    for (var fieldName in relations) {
+        var relation = relations[fieldName];
+
+        var data = entity.get(fieldName);
 
         if (relation.type === 'one') {
             if (data < 0) {
