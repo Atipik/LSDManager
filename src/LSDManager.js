@@ -572,7 +572,6 @@ function LSDManager(injectStorage) {
     'use strict';
 
     this.$databaseVersion   = null;
-    this.$migrations        = [];
     this.$lastId            = 0;
     this.$entity            = {};
     this.$entityClasses     = {};
@@ -597,8 +596,10 @@ function LSDManager(injectStorage) {
     this.init();
 }
 
-LSDManager.prototype.addMigration = LSDManager.prototype._addMigration = function(migration) {
-    this.$migrations.push(migration);
+LSDManager.$migrations = [];
+
+LSDManager.addMigration = LSDManager._addMigration = function(migration) {
+    LSDManager.$migrations.push(migration);
 };
 
 LSDManager.prototype.addToCache = LSDManager.prototype._addToCache = function(entity) {
@@ -1103,8 +1104,8 @@ LSDManager.prototype.isValidEntity = LSDManager.prototype._isValidEntity = funct
 LSDManager.prototype.migrate = LSDManager.prototype._migrate = function() {
     var start = new Date().getTime();
 
-    for (var i = 0; i < this.$migrations.length; i++) {
-        this.$migrations[i](this);
+    for (var i = 0; i < LSDManager.$migrations.length; i++) {
+        LSDManager.$migrations[i](this);
     }
 
     this.storeDatabaseVersion();
