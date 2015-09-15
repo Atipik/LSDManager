@@ -752,12 +752,20 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
             break;
 
             case 'date':
-                value = new Date(value);
-                value.setHours(0, 0, 0, 0);
+                if (value === '') {
+                    value = null;
+                } else {
+                    value = new Date(value);
+                    value.setHours(0, 0, 0, 0);
+                }
             break;
 
             case 'datetime':
-                value = new Date(value);
+                if (value === '') {
+                    value = null;
+                } else {
+                    value = new Date(value);
+                }
             break;
         }
     }
