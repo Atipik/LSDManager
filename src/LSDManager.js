@@ -283,18 +283,17 @@ Repository.prototype.query = Repository.prototype._query = function(filter) {
 };
 
 Repository.prototype.remove = Repository.prototype._remove = function(data, fireEvents) {
-    var entity, id;
+    var entity;
 
     if (fireEvents === undefined) {
         fireEvents = true;
     }
 
+    var id = this.$manager.extractIdFromData(data);
+
     if (data instanceof Entity) {
         entity = data;
-        id     = entity.getId();
     } else {
-        id     = data;
-
         if (fireEvents) {
             entity = this.findEntity(id, null, false);
         }
@@ -343,9 +342,10 @@ Repository.prototype.removeCollection = Repository.prototype._removeCollection =
     console.group('Remove collection');
 
     for (i = 0; i < collection.length; i++) {
-        id = collection[i] instanceof Entity ? collection[i].getId() : collection[i];
-
-        this.remove(id, fireEvents);
+        this.remove(
+            this.$manager.extractIdFromData(collection[i]),
+            fireEvents
+        );
     }
 
     console.groupEnd();
@@ -357,17 +357,21 @@ Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = funct
     if (previousIds.length > 0) {
         console.group('Remove deleted');
 
-        var i, index;
-
-        for (i = 0; i < collection.length; i++) {
-            index = previousIds.indexOf(collection[i].getId());
+        for (var i = 0; i < collection.length; i++) {
+            var index = previousIds.indexOf(
+                this.$manager.extractIdFromData(collection[i])
+            );
 
             if (index !== -1) {
                 previousIds.splice(index, 1);
             }
         }
 
-        this.removeCollection(previousIds);
+        if (previousIds.length > 0) {
+            this.removeCollection(previousIds, fireEvents);
+        } else {
+            console.log('Nothing to delete');
+        }
 
         console.groupEnd();
     }
@@ -648,6 +652,20 @@ LSDManager.prototype.extend = LSDManager.prototype._extend = function(parent, ch
     }
 
     return parent;
+};
+
+LSDManager.prototype.extractIdFromData = LSDManager.prototype._extractIdFromData = function(data) {
+    if (data instanceof Entity) {
+        return data.getId();
+    } else if (this.getType(data) === 'object') {
+        if (data.id !== undefined) {
+            return data.id;
+        }
+    } else {
+        return data;
+    }
+
+    throw new Error('Impossible to extract id from data: ' + JSON.stringify(data));
 };
 
 LSDManager.prototype.fireEvents = LSDManager.prototype._fireEvents = function(eventName, repository, data) {
