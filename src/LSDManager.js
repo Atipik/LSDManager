@@ -929,22 +929,30 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             }
         }
 
-        var getRelationGetter = function(field, entity) {
+        var getRelationGetter = function(relationField, relation) {
             return function() {
-                return this.$repository.$manager.getRepository(entity).findOneBy(
-                    'id',
-                    this.get(field)
-                );
-            };
-        };
+                if (relation.type === 'many') {
+                    var field, data;
+                    var repository = this.$repository.$manager.getRepository(relation.entity);
 
-        var getRelationsGetter = function(field, entity) {
-            return function() {
-                return this.$repository.$manager.getRepository(entity).findByCollection(
-                    'id',
-                    this.get(field)
-                );
-            };
+                    if (relation.referencedField) {
+                        return repository.findBy(
+                            relation.referencedField,
+                            this.get('id')
+                        );
+                    } else {
+                        return repository.findByCollection(
+                            'id',
+                            this.get(relationField)
+                        );
+                    }
+                } else {
+                    return this.$repository.$manager.getRepository(relation.entity).findOneBy(
+                        'id',
+                        this.get(relationField)
+                    );
+                }
+            }
         };
 
         for (field in this.getEntityDefinition(entityName).relations) {
@@ -954,15 +962,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 method = this.getMethodName('get', this.getRelationName(relation));
 
                 if (this.$entity[entityName][method] === undefined) {
-                    var relationGetterMethod;
-
-                    if (relation.type === 'many') {
-                        relationGetterMethod = getRelationsGetter;
-                    } else {
-                        relationGetterMethod = getRelationGetter;
-                    }
-
-                    this.$entity[entityName][method] = relationGetterMethod(field, relation.entity);
+                    this.$entity[entityName][method] = getRelationGetter(field, relation);
                 }
             }
         }
