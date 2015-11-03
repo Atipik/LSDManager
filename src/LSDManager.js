@@ -223,16 +223,18 @@ Repository.prototype.isValid = Repository.prototype._isValid = function(entity) 
     for (var fieldName in relations) {
         var relation = relations[fieldName];
 
-        var data = entity.get(fieldName);
+        if (relation.referencedField === undefined) {
+            var data = entity.get(fieldName);
 
-        if (relation.type === 'one') {
-            if (data < 0) {
-                return false;
-            }
-        } else if (relation.type === 'many') {
-            for (var i = 0; i < data.length; i++) {
-                if (data[i] < 0) {
+            if (relation.type === 'one') {
+                if (data < 0) {
                     return false;
+                }
+            } else if (relation.type === 'many') {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i] < 0) {
+                        return false;
+                    }
                 }
             }
         }
@@ -445,15 +447,17 @@ Repository.prototype.setDependencies = Repository.prototype._setDependencies = f
         for (var field in entityDefinition.dependencies[entityName]) {
             var dependency = entityDefinition.dependencies[entityName][field];
 
-            var entities;
+            var entities = [];
             if (dependency.type === 'one') {
                 entities = repository.findBy(field, oldId);
             } else if (dependency.type === 'many') {
-                entities = repository.query(
-                    function(currentEntity) {
-                        return currentEntity.get(field).indexOf(oldId) !== -1;
-                    }
-                );
+                if (entityDefinition.fields[field]) {
+                    entities = repository.query(
+                        function(currentEntity) {
+                            return currentEntity.get(field).indexOf(oldId) !== -1;
+                        }
+                    );
+                }
             }
 
             for (var i = 0; i < entities.length; i++) {
@@ -960,9 +964,14 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 var relation = this.getEntityDefinition(entityName).relations[field];
 
                 method = this.getMethodName('get', this.getRelationName(relation));
+                var getter = getRelationGetter(field, relation);
+
+                if (this.$entity[entityName]['_' + method] === undefined) {
+                    this.$entity[entityName]['_' + method] = getter;
+                }
 
                 if (this.$entity[entityName][method] === undefined) {
-                    this.$entity[entityName][method] = getRelationGetter(field, relation);
+                    this.$entity[entityName][method] = getter;
                 }
             }
         }
