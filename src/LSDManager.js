@@ -293,6 +293,12 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
 
     var id = this.$manager.extractIdFromData(data);
 
+    if (!id) {
+        console.log('It was a new entity. Nothing to delete');
+
+        return;
+    }
+
     if (data instanceof Entity) {
         entity = data;
     } else {
@@ -340,10 +346,9 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
  * Remove collection of objects | object identifiers
  */
 Repository.prototype.removeCollection = Repository.prototype._removeCollection = function(collection, fireEvents) {
-    var i, id;
     console.group('Remove collection');
 
-    for (i = 0; i < collection.length; i++) {
+    for (var i = 0; i < collection.length; i++) {
         this.remove(
             this.$manager.extractIdFromData(collection[i]),
             fireEvents
