@@ -939,27 +939,41 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
         }
 
         var getRelationGetter = function(relationField, relation) {
-            return function() {
+            return function(filter) {
+                filter = filter || function() { return true; };
+
                 if (relation.type === 'many') {
-                    var field, data;
+                    var field, data, entities, results = [];
                     var repository = this.$repository.$manager.getRepository(relation.entity);
 
                     if (relation.referencedField) {
-                        return repository.findBy(
+                        entities = repository.findBy(
                             relation.referencedField,
                             this.get('id')
                         );
                     } else {
-                        return repository.findByCollection(
+                        entities = repository.findByCollection(
                             'id',
                             this.get(relationField)
                         );
                     }
+
+                    for (var i = 0; i < entities.length; i++) {
+                        if (filter(entities[i])) {
+                            results.push(entities[i]);
+                        }
+                    }
+
+                    return results;
                 } else {
-                    return this.$repository.$manager.getRepository(relation.entity).findOneBy(
+                    var entity = this.$repository.$manager.getRepository(relation.entity).findOneBy(
                         'id',
                         this.get(relationField)
                     );
+
+                    if (filter(entity)) {
+                        return entity;
+                    }
                 }
             }
         };
