@@ -979,8 +979,10 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
         }
 
         var getRelationGetter = function(relationField, relation) {
+            var cacheName = '_' + relation.entity;
+
             return function(filter) {
-                if (this['_' + relationField] === undefined) {
+                if (this[cacheName] === undefined) {
                     var repository = manager.getRepository(relation.entity);
                     var data;
 
@@ -999,9 +1001,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                             );
                         }
                     } else {
-                        if (this.$oldId === null) {
-                            data = null;
-                        } else if (relation.referencedField) {
+                        if (relation.referencedField) {
                             data = repository.findOneBy(
                                 relation.referencedField,
                                 this.get('id')
@@ -1016,10 +1016,10 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                     data = manager.filter(data, filter);
 
-                    this['_' + relationField] = data;
+                    this[cacheName] = data;
                 }
 
-                return this['_' + relationField];
+                return this[cacheName];
             }
         };
 
@@ -1055,7 +1055,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                 if (value[getterMethod] !== undefined && value[getterMethod]().indexOf(entity) === -1) {
                     valueRelationName = manager.getRelationName(valueRelation, false);
-                    var adderMethod = manager.getMethodName('add', getRelationName);
+                    var adderMethod = manager.getMethodName('add', valueRelationName);
 
                     value[adderMethod](entity);
                 }
@@ -1068,8 +1068,10 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 relation.referencedField || relationField
             );
 
+            var cacheName = '_' + relation.entity;
+
             return function(value) {
-                this['_' + relationField] = value;
+                this[cacheName] = value;
 
                 if (value instanceof Entity) {
                     if (this[setterMethod] !== undefined) {
@@ -1083,14 +1085,16 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             };
         };
 
-        var getRelationAdder = function(relationField) {
+        var getRelationAdder = function(relationField, relation) {
+            var cacheName = '_' + relation.entity;
+
             return function(value) {
-                if (this['_' + relationField] === undefined) {
-                    this['_' + relationField] = [];
+                if (this[cacheName] === undefined) {
+                    this[cacheName] = [];
                 }
 
-                if (this['_' + relationField].indexOf(value) === -1) {
-                    this['_' + relationField].push(value);
+                if (this[cacheName].indexOf(value) === -1) {
+                    this[cacheName].push(value);
                 }
 
                 addCurrentToRelation(relationField, this, value);
@@ -1127,7 +1131,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                 if (relation.type === 'many') {
                     var adderMethod = this.getMethodName('add', this.getRelationName(relation, false));
-                    var adder = getRelationAdder(field);
+                    var adder = getRelationAdder(field, relation);
 
                     if (this.$entity[entityName]['_' + adderMethod] === undefined) {
                         this.$entity[entityName]['_' + adderMethod] = adder;
