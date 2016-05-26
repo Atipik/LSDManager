@@ -255,10 +255,19 @@ Repository.prototype.createEntity = Repository.prototype._createEntity = functio
     return entity;
 };
 
-Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesStorage = function(fieldName) {
+Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesStorage = function(fieldNames) {
     var entitiesId = this.getIndexStorage('id');
 
-    var index = {};
+    var returnOne = false;
+    if (!(fieldNames instanceof Array)) {
+        returnOne  = true;
+        fieldNames = [ fieldNames ];
+    }
+
+    var indexes = {};
+    for (var i = 0; i < fieldNames.length; i++) {
+        indexes[fieldNames[i]] = {};
+    }
 
     for (var i = 0; i < entitiesId.length; i++) {
         try {
@@ -271,15 +280,23 @@ Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesS
             continue;
         }
 
-        this.addIndex(
-            fieldName,
-            entity[fieldName],
-            entity.id,
-            index
-        );
+        for (var j = 0; j < fieldNames.length; j++) {
+            var fieldName = fieldNames[j];
+
+            this.addIndex(
+                fieldName,
+                entity[fieldName],
+                entity.id,
+                indexes[fieldName]
+            );
+        }
     }
 
-    return index;
+    if (returnOne) {
+        return indexes[fieldNames[0]];
+    } else {
+        return indexes;
+    }
 };
 
 Repository.prototype.removeIndexesFromCache = Repository.prototype._removeIndexesFromCache = function() {
@@ -684,7 +701,7 @@ Repository.prototype.removeCollection = Repository.prototype._removeCollection =
 
 Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
     if (previousIds.length > 0) {
-        console.group('Remove deleted');
+        console.group('Remove deleted for entity "' + this.$entityName + '"');
 
         previousIds = this.$manager.clone(previousIds);
 
@@ -763,21 +780,30 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
         this.remove(entity.$oldId, fireEvents);
     }
 
-    var entityDefinition = this.getEntityDefinition();
+    var indexFields;
+    if (this.$manager.$useIndex) {
+        var entityDefinition = this.getEntityDefinition();
 
-    for (var fieldName in entityDefinition.indexes) {
-        var newValue = entity[fieldName];
-        var oldValue = entity.$oldValues[fieldName];
+        indexFields = Object.keys(entityDefinition.indexes);
+    } else {
+        indexFields = [ 'id' ];
+    }
+
+    for (var i = 0; i < indexFields.length; i++) {
+        var indexField = indexFields[i];
+
+        var newValue = entity[indexField];
+        var oldValue = entity.$oldValues[indexField];
 
         if (newValue !== oldValue || changingId) {
             this.removeIndex(
-                fieldName,
+                indexField,
                 oldValue,
                 changingId ? entity.$oldId : id
             );
 
             this.addIndex(
-                fieldName,
+                indexField,
                 newValue,
                 id
             );
@@ -982,6 +1008,7 @@ function LSDManager(injectStorage) {
     this.$repositoryClasses = {};
 
     this.$INDEX_PREFIX      = '$';
+    this.$useIndex          = true;
     this.$useShortcut       = true;
 
     if (injectStorage) {
@@ -1060,6 +1087,14 @@ LSDManager.prototype.deleteFromCache = LSDManager.prototype._deleteFromCache = f
     }
 
     return this;
+};
+
+LSDManager.prototype.disableIndexation = LSDManager.prototype._disableIndexation = function() {
+    this.$useIndex = false;
+};
+
+LSDManager.prototype.enableIndexation = LSDManager.prototype._enableIndexation = function() {
+    this.$useIndex = true;
 };
 
 LSDManager.prototype.extend = LSDManager.prototype._extend = function(child, parent) {
@@ -1773,6 +1808,32 @@ LSDManager.prototype.registerEvent = LSDManager.prototype._registerEvent = funct
     this.$events[eventName][this.$eventId] = callback;
 
     return this.$eventId++;
+};
+
+LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = function() {
+    console.groupCollapsed('Reindex database');
+
+    for (var entityName in this.$entityDefinitions) {
+        var indexFields = Object.keys(
+            this.$entityDefinitions[entityName].indexes
+        );
+
+        if (indexFields.length > 1) {
+            indexFields.splice(indexFields.indexOf('id'), 1);
+
+            console.log('Reindex entity "' + entityName + '" for field(s): ' + indexFields.join(', '));
+
+            var repository = this.getRepository(entityName);
+            var indexes = repository.createIndexesStorage(indexFields);
+
+            for (var fieldName in indexes) {
+                repository.setIndexStorage(fieldName, indexes[fieldName]);
+            }
+        }
+    }
+
+    console.log('Reindexation finished');
+    console.groupEnd();
 };
 
 LSDManager.prototype.removeRelationCache = LSDManager.prototype._removeRelationCache = function(entity, relation) {
