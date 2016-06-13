@@ -26,7 +26,7 @@ Entity.prototype.$clone = Entity.prototype._$clone = function() {
     );
 
     if (clone.id > 0) {
-        clone.$oldId     = clone.id;
+        clone.$oldId = clone.id;
     }
 
     clone.$oldValues = this.$manager.clone(this.$oldValues);
