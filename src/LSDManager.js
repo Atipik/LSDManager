@@ -706,11 +706,11 @@ Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = funct
         previousIds = this.$manager.clone(previousIds);
 
         for (var i = 0; i < collection.length; i++) {
-            var index = previousIds.indexOf(
-                this.$manager.extractIdFromData(collection[i])
-            );
+            var id = this.$manager.extractIdFromData(collection[i]);
 
-            if (index !== -1) {
+            var index = previousIds.indexOf(id);
+
+            if (index !== -1 || id < 0) {
                 previousIds.splice(index, 1);
             }
         }
