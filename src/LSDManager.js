@@ -771,6 +771,12 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
         fireEvents = true;
     }
 
+    if (!entity.$isModified()) {
+        console.group('Entity ' + this.$entityName + ' #' + id + ' is not modified. Save canceled.');
+
+        return false;
+    }
+
     console.group('Saving ' + this.$entityName + ' #' + id);
     // console.log(entity);
 
@@ -828,6 +834,8 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
 
     console.groupEnd();
     console.log(this.$entityName + ' #' + entity.getId() + ' saved');
+
+    return true;
 };
 
 Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {
