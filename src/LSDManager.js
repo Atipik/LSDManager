@@ -772,7 +772,7 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
     }
 
     if (!entity.$isModified()) {
-        console.group('Entity ' + this.$entityName + ' #' + id + ' is not modified. Save canceled.');
+        console.log('Entity ' + this.$entityName + ' #' + id + ' is not modified. Save canceled.');
 
         return false;
     }
@@ -1108,7 +1108,11 @@ LSDManager.prototype.enableIndexation = LSDManager.prototype._enableIndexation =
 LSDManager.prototype.extend = LSDManager.prototype._extend = function(child, parent) {
     for (var property in parent) {
         if (parent.hasOwnProperty(property)) {
-            child[property] = parent[property];
+            if (parent[property] instanceof Array) {
+                child[property] = this.extend([], parent[property]);
+            } else {
+                child[property] = parent[property];
+            }
         }
     }
 
