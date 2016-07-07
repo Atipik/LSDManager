@@ -175,40 +175,42 @@ function Repository(manager, entityName) {
     this.$entityName = entityName;
 }
 
-Repository.prototype.addIndex = Repository.prototype._addIndex = function(fieldName, fieldValue, id, indexToUse) {
-    if (fieldValue === undefined || fieldValue === null) {
+Repository.prototype.addIndex = Repository.prototype._addIndex = function(indexName, value, id, indexStorage) {
+    if (value === undefined || value === null) {
         return false;
     }
 
     var index;
-    if (indexToUse) {
-        index = indexToUse;
+    if (indexStorage) {
+        index = indexStorage;
     } else {
-        index = this.getIndexStorage(fieldName);
+        index = this.getIndexStorage(indexName);
     }
 
     var updated = false;
 
-    if (fieldName === 'id') {
+    if (indexName === 'id') {
         if (index.indexOf(id) === -1) {
             index.push(id);
 
             updated = true;
         }
     } else {
-        if (index[fieldValue] === undefined) {
-            index[fieldValue] = [];
+        value = this.getEntityDefinition().indexes[indexName].transformIndex(value);
+
+        if (index[value] === undefined) {
+            index[value] = [];
         }
 
-        if (index[fieldValue].indexOf(id) === -1) {
-            index[fieldValue].push(id);
+        if (index[value].indexOf(id) === -1) {
+            index[value].push(id);
 
             updated = true;
         }
     }
 
-    if (!indexToUse && updated) {
-        this.setIndexStorage(fieldName, index);
+    if (!indexStorage && updated) {
+        this.setIndexStorage(indexName, index);
 
         return true;
     }
@@ -255,19 +257,21 @@ Repository.prototype.createEntity = Repository.prototype._createEntity = functio
     return entity;
 };
 
-Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesStorage = function(fieldNames) {
+Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesStorage = function(indexNames) {
     var entitiesId = this.getIndexStorage('id');
 
     var returnOne = false;
-    if (!(fieldNames instanceof Array)) {
+    if (!(indexNames instanceof Array)) {
         returnOne  = true;
-        fieldNames = [ fieldNames ];
+        indexNames = [ indexNames ];
     }
 
     var indexes = {};
-    for (var i = 0; i < fieldNames.length; i++) {
-        indexes[fieldNames[i]] = {};
+    for (var i = 0; i < indexNames.length; i++) {
+        indexes[indexNames[i]] = {};
     }
+
+    var indexesDefinitions = this.getEntityDefinition().indexes;
 
     for (var i = 0; i < entitiesId.length; i++) {
         try {
@@ -280,20 +284,20 @@ Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesS
             continue;
         }
 
-        for (var j = 0; j < fieldNames.length; j++) {
-            var fieldName = fieldNames[j];
+        for (var j = 0; j < indexNames.length; j++) {
+            var indexName = indexNames[j];
 
             this.addIndex(
-                fieldName,
-                entity[fieldName],
+                indexName,
+                indexesDefinitions[indexName].getIndex(entity),
                 entity.id,
-                indexes[fieldName]
+                indexes[indexName]
             );
         }
     }
 
     if (returnOne) {
-        return indexes[fieldNames[0]];
+        return indexes[indexNames[0]];
     } else {
         return indexes;
     }
@@ -302,10 +306,10 @@ Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesS
 Repository.prototype.removeIndexesFromCache = Repository.prototype._removeIndexesFromCache = function() {
     var entityDefinition = this.getEntityDefinition();
 
-    for (var fieldName in entityDefinition.indexes) {
+    for (var indexName in entityDefinition.indexes) {
         this.$manager.deleteFromCache(
             this.$entityName,
-            this.$INDEX_PREFIX + fieldName
+            this.$INDEX_PREFIX + indexName
         );
     }
 };
@@ -331,20 +335,21 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
     // INDEX
     var entityDefinition = this.getEntityDefinition();
     if (entityDefinition.indexes[field] !== undefined) {
-        var index = this.getIndexStorage(field);
+        var index      = this.getIndexStorage(field);
+        var indexValue = entityDefinition.indexes[field].transformIndex(value);
 
         if (justOne) {
-            if (index[value] && index[value][0]) {
-                return [ this.findEntity(index[value][0]) ];
+            if (index[indexValue] && index[indexValue][0]) {
+                return [ this.findEntity(index[indexValue][0]) ];
             } else {
                 return [];
             }
         } else {
             var entities = [];
 
-            if (index[value]) {
-                for (var i = 0; i < index[value].length; i++) {
-                    entities.push(this.findEntity(index[value][i]));
+            if (index[indexValue]) {
+                for (var i = 0; i < index[indexValue].length; i++) {
+                    entities.push(this.findEntity(index[indexValue][i]));
                 }
             }
 
@@ -483,37 +488,39 @@ Repository.prototype.getIndexStorageKey = Repository.prototype._getIndexStorageK
     return this.$manager.$storage.key(
         [
             this.getStorageKeyName(),
-            this.$manager.$INDEX_PREFIX + this.getEntityDefinition().indexes[fieldName]
+            this.$manager.$INDEX_PREFIX + (
+                this.$manager.$useShortcut ? this.getEntityDefinition().indexes[fieldName].shortcut : fieldName
+            )
         ]
     );
 };
 
-Repository.prototype.getIndexStorage = Repository.prototype._getIndexStorage = function(fieldName) {
+Repository.prototype.getIndexStorage = Repository.prototype._getIndexStorage = function(indexName) {
     var entityName = this.$entityName;
-    var indexName  = this.$manager.$INDEX_PREFIX + fieldName;
+    var cacheName  = this.$manager.$INDEX_PREFIX + indexName;
 
-    if (!this.$manager.hasInCache(entityName, indexName)) {
+    if (!this.$manager.hasInCache(entityName, cacheName)) {
         var indexStorage = this.$manager.$storage.get(
-            this.getIndexStorageKey(fieldName),
-            fieldName === 'id' ? [] : null
+            this.getIndexStorageKey(indexName),
+            indexName === 'id' ? [] : null
         );
 
         if (indexStorage === null) {
             if (this.getIndexStorage('id').length === 0) {
                 indexStorage = {};
             } else {
-                indexStorage = this.createIndexesStorage(fieldName);
+                indexStorage = this.createIndexesStorage(indexName);
             }
 
-            this.setIndexStorage(fieldName, indexStorage);
+            this.setIndexStorage(indexName, indexStorage);
         } else {
-            this.$manager.addToCache(entityName, indexName, indexStorage);
+            this.$manager.addToCache(entityName, cacheName, indexStorage);
         }
 
         return indexStorage;
     }
 
-    return this.$manager.getFromCache(entityName, indexName);
+    return this.$manager.getFromCache(entityName, cacheName);
 };
 
 Repository.prototype.__init__ = function() {};
@@ -651,7 +658,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
             if (fieldName !== 'id') {
                 this.removeIndex(
                     fieldName,
-                    entity.get(fieldName),
+                    entityDefinition.indexes[fieldName].getIndex(entity),
                     id
                 );
             }
@@ -734,6 +741,7 @@ Repository.prototype.removeIndex = Repository.prototype._removeIndex = function(
 
     var index = this.getIndexStorage(fieldName);
     var indexOf, fieldIndex;
+    fieldValue = this.getEntityDefinition().indexes[fieldName].transformIndex(fieldValue);
 
     if (fieldName === 'id') {
         fieldIndex = index;
@@ -1983,10 +1991,29 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     }
 
     // manage indexes
-    entityDefinition.indexes = {};
+    if (entityDefinition.indexes === undefined) {
+        entityDefinition.indexes = {};
+    }
+
+    var getStandardIndexGetter = function(field) {
+        return function(entity) {
+            return entity.get(field);
+        }
+    };
+
+    var getStandardIndexTransformer = function() {
+        return function(value) {
+            return value;
+        };
+    };
+
     for (var field in entityDefinition.fields) {
         if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[field].index === true) {
-            entityDefinition.indexes[field] = entityDefinition.fields[field].shortcut || field;
+            entityDefinition.indexes[field] = {
+                shortcut       : entityDefinition.fields[field].shortcut || field,
+                getIndex       : getStandardIndexGetter(field),
+                transformIndex : getStandardIndexTransformer()
+            };
         }
     }
 
