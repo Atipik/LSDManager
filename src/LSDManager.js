@@ -642,7 +642,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
         console.log('It was a new entity. Nothing to delete');
 
         this.$manager.deleteFromCache(entity);
-        this.$manager.resetRelationsCache(data);
+        this.$manager.resetRelationsCache(entity);
 
         return;
     }
@@ -671,6 +671,8 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
         );
 
         this.$manager.deleteFromCache(this.$entityName, id);
+        this.$manager.resetRelationsCache(entity);
+
 
         if (fireEvents) {
             this.$manager.fireEvents('afterRemove', entity);
@@ -1900,7 +1902,7 @@ LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsC
                         var indexOf = relationValue.indexOf(entity);
 
                         if (indexOf !== -1) {
-                            relationValue.splice(indexOf);
+                            relationValue.splice(indexOf, 1);
                         }
                     }
                 }
