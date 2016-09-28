@@ -696,10 +696,16 @@ Repository.prototype.removeCollection = Repository.prototype._removeCollection =
 
     for (var i = 0; i < collection.length; i++) {
         try {
+            var item = collection[i];
+
             this.remove(
                 collection[i],
                 fireEvents
             );
+
+            if (collection.indexOf(item) === -1) {
+                i--;
+            }
         } catch (e) {}
     }
 
