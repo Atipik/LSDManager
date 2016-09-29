@@ -1864,6 +1864,30 @@ LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = f
     console.groupEnd();
 };
 
+LSDManager.prototype.removeCollection = LSDManager.prototype._removeCollection = function(collection, fireEvents) {
+    var collectionByRepository = {};
+
+    for (var i = 0; i < collection.length; i++) {
+        var item       = collection[i];
+        var entityName = item.$repository.$entityName;
+
+        if (collectionByRepository[entityName] === undefined) {
+            collectionByRepository[entityName] = [];
+        }
+
+        collectionByRepository[entityName].push(item);
+    }
+
+    for (var entityName in collectionByRepository) {
+        this.getRepository(entityName).removeCollection(
+            collectionByRepository[entityName],
+            fireEvents
+        );
+    }
+
+    return this;
+};
+
 LSDManager.prototype.removeRelationCache = LSDManager.prototype._removeRelationCache = function(entity, relation) {
     delete entity.$relationsCache[this.getRelationName(relation)];
 };
