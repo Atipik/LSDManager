@@ -129,6 +129,10 @@ Entity.prototype.$save = Entity.prototype._$save = function() {
     return this.$repository.save(this);
 };
 
+Entity.prototype.$saveInMemory = Entity.prototype._$saveInMemory = function() {
+    return this.$repository.saveInMemory(this);
+};
+
 Entity.prototype.set = Entity.prototype._set = function(field, value) {
     var entityDefinition = this.$repository.getEntityDefinition();
 
@@ -868,6 +872,37 @@ Repository.prototype.saveCollection = Repository.prototype._saveCollection = fun
     }
 
     return this;
+};
+
+Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = function(entity) {
+    var manager = this.$manager;
+    manager.addToCache(entity);
+
+    var originalEntityName = this.$entityName;
+
+    for(var entityName in manager.$entityDefinitions) {
+        var entityDefinition = manager.$entityDefinitions[entityName];
+
+        for (var field in entityDefinition.relations) {
+            var relation = entityDefinition.relations[field];
+
+            if (relation.entity === originalEntityName && relation.type === 'many') {
+                var getterMethod = manager.getMethodName('get', relation.referencedField);
+
+                for (var id in manager.$cache[entityName]) {
+                    var cachedEntity  = manager.$cache[entityName][id];
+
+                    if (cachedEntity.id === entity[getterMethod]()) {
+                        var relationCache = manager.getRelationCache(cachedEntity, relation) || [];
+
+                        relationCache.push(entity);
+
+                        manager.setRelationCache(cachedEntity, relation, relationCache);
+                    }
+                }
+            }
+        }
+    }
 };
 
 Repository.prototype.setDependencies = Repository.prototype._setDependencies = function(oldId, entity) {
