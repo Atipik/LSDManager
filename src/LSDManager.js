@@ -876,7 +876,6 @@ Repository.prototype.saveCollection = Repository.prototype._saveCollection = fun
 
 Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = function(entity) {
     var manager = this.$manager;
-    manager.addToCache(entity);
 
     var originalEntityName = this.$entityName;
 
@@ -884,25 +883,41 @@ Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = functio
         var entityDefinition = manager.$entityDefinitions[entityName];
 
         for (var field in entityDefinition.relations) {
-            var relation = entityDefinition.relations[field];
+            var relation             = entityDefinition.relations[field];
 
             if (relation.entity === originalEntityName && relation.type === 'many') {
                 var getterMethod = manager.getMethodName('get', relation.referencedField);
+                var relationPluralName   = manager.getRelationName(relation);
+                var relationGetterMethod = manager.getMethodName('get', relationPluralName);
 
                 for (var id in manager.$cache[entityName]) {
                     var cachedEntity  = manager.$cache[entityName][id];
 
                     if (cachedEntity.id === entity[getterMethod]()) {
-                        var relationCache = manager.getRelationCache(cachedEntity, relation) || [];
+                        if (!manager.hasInCache(entity)) {
+                            if (!manager.hasRelationCache(cachedEntity, relation)) {
+                                // load "normal" data before insert memory data in relation cache
+                                cachedEntity[relationGetterMethod]();
+                            }
 
-                        relationCache.push(entity);
+                            var relationCache      = manager.getRelationCache(cachedEntity, relation) || [];
+                            var isNotCurrentEntity = function(relation) {
+                                return relation.id !== entity.id;
+                            };
 
-                        manager.setRelationCache(cachedEntity, relation, relationCache);
+                            if (relationCache.every(isNotCurrentEntity)) {
+                                relationCache.push(entity);
+
+                                manager.setRelationCache(cachedEntity, relation, relationCache);
+                            }
+                        }
                     }
                 }
             }
         }
     }
+
+    manager.addToCache(entity);
 };
 
 Repository.prototype.setDependencies = Repository.prototype._setDependencies = function(oldId, entity) {
@@ -1625,15 +1640,15 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             if (this.getEntityDefinition(entityName).relations.hasOwnProperty(field)) {
                 var relation = this.getEntityDefinition(entityName).relations[field];
 
-                var pluralRelationName   = this.getRelationName(relation);
-                var singularRelationName = this.getRelationName(relation, false);
+                var relationPluralName   = this.getRelationName(relation);
+                var relationSingularName = this.getRelationName(relation, false);
 
-                properties[pluralRelationName.lowerCaseFirstLetter()] = {
-                    get: getPropertyRelationGetter(pluralRelationName),
-                    set: getPropertyRelationSetter(pluralRelationName)
+                properties[relationPluralName.lowerCaseFirstLetter()] = {
+                    get: getPropertyRelationGetter(relationPluralName),
+                    set: getPropertyRelationSetter(relationPluralName)
                 };
 
-                getterMethod = this.getMethodName('get', pluralRelationName);
+                getterMethod = this.getMethodName('get', relationPluralName);
                 var getter = getRelationGetter(field, relation);
 
                 if (this.$entity[entityName]['_' + getterMethod] === undefined) {
@@ -1644,7 +1659,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                     this.$entity[entityName][getterMethod] = getter;
                 }
 
-                var setterMethod = this.getMethodName('set', pluralRelationName);
+                var setterMethod = this.getMethodName('set', relationPluralName);
                 var setter = getRelationSetter(field, relation);
 
                 if (this.$entity[entityName]['_' + setterMethod] === undefined) {
@@ -1656,7 +1671,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 }
 
                 if (relation.type === 'many') {
-                    var adderMethod = this.getMethodName('add', singularRelationName);
+                    var adderMethod = this.getMethodName('add', relationSingularName);
                     var adder = getRelationAdder(field, relation);
 
                     if (this.$entity[entityName]['_' + adderMethod] === undefined) {
@@ -1817,6 +1832,10 @@ LSDManager.prototype.hasInCache = LSDManager.prototype._hasInCache = function(en
     }
 
     return this.$cache[entityName] !== undefined && this.$cache[entityName][entityId] !== undefined;
+};
+
+LSDManager.prototype.hasRelationCache = LSDManager.prototype._hasRelationCache = function(entity, relation) {
+    return entity.$relationsCache[this.getRelationName(relation)] !== undefined;
 };
 
 LSDManager.prototype.__init__ = function() {};
