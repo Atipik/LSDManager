@@ -381,7 +381,7 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
 
     if (justOne) {
         if (entities[0]) {
-            return entities[0];
+            return [ entities[0] ];
         } else {
             return [];
         }
