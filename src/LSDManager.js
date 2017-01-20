@@ -1609,7 +1609,8 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 var relationCache = manager.getRelationCache(this, relation);
 
                 if (relationCache === undefined) {
-                    relationCache = [];
+                    // call getter
+                    relationCache = this[manager.getRelationName(relation).lowerCaseFirstLetter()];
 
                     manager.setRelationCache(this, relation, relationCache);
                 }
