@@ -729,7 +729,7 @@ Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = funct
 
             var index = previousIds.indexOf(id);
 
-            if (index !== -1 || id < 0) {
+            if (index !== -1) {
                 previousIds.splice(index, 1);
             }
         }
