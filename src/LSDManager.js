@@ -925,58 +925,52 @@ Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = functio
 Repository.prototype.setDependencies = Repository.prototype._setDependencies = function(oldId, entity) {
     var entityDefinition = this.getEntityDefinition();
 
-    var ids = [ oldId, entity.id ];
+    for (var dependencyName in entityDefinition.dependencies) {
+        var repository = this.$manager.getRepository(dependencyName);
 
-    for (var j = 0; j < ids.length; j++) {
-        var id = ids[ j ];
+        for (var field in entityDefinition.dependencies[ dependencyName ]) {
+            var dependency = entityDefinition.dependencies[ dependencyName ][ field ];
 
-        for (var dependencyName in entityDefinition.dependencies) {
-            var repository = this.$manager.getRepository(dependencyName);
-
-            for (var field in entityDefinition.dependencies[ dependencyName ]) {
-                var dependency = entityDefinition.dependencies[ dependencyName ][ field ];
-
-                var entities = [];
-                if (dependency.type === 'one') {
-                    entities = repository.findBy(field, id);
-                } else if (dependency.type === 'many') {
-                    if (entityDefinition.fields[ field ]) {
-                        entities = repository.query(
-                            function(currentEntity) {
-                                return currentEntity.get(field).indexOf(id) !== -1;
-                            }
-                        );
-                    }
-                }
-
-                for (var i = 0; i < entities.length; i++) {
-                    console.log(
-                        'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
-                        ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
+            var entities = [];
+            if (dependency.type === 'one') {
+                entities = repository.findBy(field, oldId);
+            } else if (dependency.type === 'many') {
+                if (entityDefinition.fields[ field ]) {
+                    entities = repository.query(
+                        function(currentEntity) {
+                            return currentEntity.get(field).indexOf(oldId) !== -1;
+                        }
                     );
-                    if (dependency.type === 'one') {
-                        entities[ i ].set(
-                            field,
-                            entity.getId()
-                        );
-                    } else if (dependency.type === 'many') {
-                        var data = entities[ i ].get(
-                            field
-                        );
-
-                        var index = data.indexOf(id);
-
-                        data[ index ] = entity.getId();
-
-                        entities[ i ].set(
-                            field,
-                            data
-                        );
-                    }
                 }
-
-                repository.saveCollection(entities);
             }
+
+            for (var i = 0; i < entities.length; i++) {
+                console.log(
+                    'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
+                    ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
+                );
+                if (dependency.type === 'one') {
+                    entities[ i ].set(
+                        field,
+                        entity.getId()
+                    );
+                } else if (dependency.type === 'many') {
+                    var data = entities[ i ].get(
+                        field
+                    );
+
+                    var index = data.indexOf(oldId);
+
+                    data[ index ] = entity.getId();
+
+                    entities[ i ].set(
+                        field,
+                        data
+                    );
+                }
+            }
+
+            repository.saveCollection(entities);
         }
     }
 };
