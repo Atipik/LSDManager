@@ -1,12 +1,12 @@
 /*
-  #######
-  #       #    # ##### # ##### #   #
-  #       ##   #   #   #   #    # #
-  #####   # #  #   #   #   #     #
-  #       #  # #   #   #   #     #
-  #       #   ##   #   #   #     #
-  ####### #    #   #   #   #     #
-*/
+ #######
+ #       #    # ##### # ##### #   #
+ #       ##   #   #   #   #    # #
+ #####   # #  #   #   #   #     #
+ #       #  # #   #   #   #     #
+ #       #   ##   #   #   #     #
+ ####### #    #   #   #   #     #
+ */
 function Entity(repository) {
     'use strict';
 
@@ -18,7 +18,8 @@ function Entity(repository) {
     this.$oldId          = null;
 }
 
-Entity.prototype.__init__ = function() {};
+Entity.prototype.__init__ = function() {
+};
 
 Entity.prototype.$clone = Entity.prototype._$clone = function() {
     var clone = this.$repository.createEntity(
@@ -36,8 +37,8 @@ Entity.prototype.$clone = Entity.prototype._$clone = function() {
 
 Entity.prototype.get = Entity.prototype._get = function(field) {
     return this.$manager.fixValueType(
-        this.$values[field],
-        this.$repository.getEntityDefinition().fields[field].type
+        this.$values[ field ],
+        this.$repository.getEntityDefinition().fields[ field ].type
     );
 };
 
@@ -55,17 +56,17 @@ Entity.prototype.$isModified = Entity.prototype._$isModified = function(deeply) 
     }
 
     for (var key in this.$oldValues) {
-        if (this.$values[key] === undefined
-        || this.$manager.getType(this.$oldValues[key]) !== this.$manager.getType(this.$values[key])) {
+        if (this.$values[ key ] === undefined
+            || this.$manager.getType(this.$oldValues[ key ]) !== this.$manager.getType(this.$values[ key ])) {
             return true;
         }
 
-        if (this.$manager.checkType(this.$oldValues[key], 'object')) {
-            if (JSON.stringify(this.$oldValues[key]) !== JSON.stringify(this.$values[key])) {
+        if (this.$manager.checkType(this.$oldValues[ key ], 'object')) {
+            if (JSON.stringify(this.$oldValues[ key ]) !== JSON.stringify(this.$values[ key ])) {
                 return true;
             }
         } else {
-            if (this.$oldValues[key] !== this.$values[key]) {
+            if (this.$oldValues[ key ] !== this.$values[ key ]) {
                 return true;
             }
         }
@@ -82,18 +83,18 @@ Entity.prototype.$isModified = Entity.prototype._$isModified = function(deeply) 
             var relations  = repository.getEntityDefinition().relations;
 
             for (var relationField in relations) {
-                var relation = relations[relationField]
+                var relation     = relations[ relationField ];
                 var relationName = manager.getRelationName(relation);
 
-                if (entity.$relationsCache[relationName]) {
-                    var relationData = entity.$relationsCache[relationName];
+                if (entity.$relationsCache[ relationName ]) {
+                    var relationData = entity.$relationsCache[ relationName ];
 
                     if (relation.type === 'one') {
                         relationData = [ relationData ];
                     }
 
                     for (var i = 0; i < relationData.length; i++) {
-                        var relationDataItem = relationData[i];
+                        var relationDataItem = relationData[ i ];
 
                         if (objects.indexOf(relationDataItem) !== -1) {
                             continue;
@@ -136,16 +137,16 @@ Entity.prototype.$saveInMemory = Entity.prototype._$saveInMemory = function() {
 Entity.prototype.set = Entity.prototype._set = function(field, value) {
     var entityDefinition = this.$repository.getEntityDefinition();
 
-    var oldValue = this.$values[field];
+    var oldValue = this.$values[ field ];
 
     if (oldValue !== value) {
-        this.$values[field] = this.$manager.fixValueType(
+        this.$values[ field ] = this.$manager.fixValueType(
             value,
-            entityDefinition.fields[field].type
+            entityDefinition.fields[ field ].type
         );
 
-        if (entityDefinition.relations[field]) {
-            this.$manager.removeRelationCache(this, entityDefinition.relations[field]);
+        if (entityDefinition.relations[ field ]) {
+            this.$manager.removeRelationCache(this, entityDefinition.relations[ field ]);
         }
     }
 
@@ -162,16 +163,15 @@ Entity.prototype.$toArray = Entity.prototype._$toArray = function(useShortCut) {
 };
 
 
-
 /*
-  ######
-  #     # ###### #####   ####   ####  # #####  ####  #####  #   #
-  #     # #      #    # #    # #      #   #   #    # #    #  # #
-  ######  #####  #    # #    #  ####  #   #   #    # #    #   #
-  #   #   #      #####  #    #      # #   #   #    # #####    #
-  #    #  #      #      #    # #    # #   #   #    # #   #    #
-  #     # ###### #       ####   ####  #   #    ####  #    #   #
-*/
+ ######
+ #     # ###### #####   ####   ####  # #####  ####  #####  #   #
+ #     # #      #    # #    # #      #   #   #    # #    #  # #
+ ######  #####  #    # #    #  ####  #   #   #    # #    #   #
+ #   #   #      #####  #    #      # #   #   #    # #####    #
+ #    #  #      #      #    # #    # #   #   #    # #   #    #
+ #     # ###### #       ####   ####  #   #    ####  #    #   #
+ */
 function Repository(manager, entityName) {
     'use strict';
 
@@ -200,14 +200,14 @@ Repository.prototype.addIndex = Repository.prototype._addIndex = function(indexN
             updated = true;
         }
     } else {
-        value = this.getEntityDefinition().indexes[indexName].transformIndex(value);
+        value = this.getEntityDefinition().indexes[ indexName ].transformIndex(value);
 
-        if (index[value] === undefined) {
-            index[value] = [];
+        if (index[ value ] === undefined) {
+            index[ value ] = [];
         }
 
-        if (index[value].indexOf(id) === -1) {
-            index[value].push(id);
+        if (index[ value ].indexOf(id) === -1) {
+            index[ value ].push(id);
 
             updated = true;
         }
@@ -240,7 +240,7 @@ Repository.prototype.createEntity = Repository.prototype._createEntity = functio
 
     Object.defineProperties(
         entity,
-        manager.$entityProperties[this.$entityName]
+        manager.$entityProperties[ this.$entityName ]
     );
 
     entity.__init__();
@@ -272,14 +272,14 @@ Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesS
 
     var indexes = {};
     for (var i = 0; i < indexNames.length; i++) {
-        indexes[indexNames[i]] = {};
+        indexes[ indexNames[ i ] ] = {};
     }
 
     var indexesDefinitions = this.getEntityDefinition().indexes;
 
     for (var i = 0; i < entitiesId.length; i++) {
         try {
-            var entity = this.findEntity(entitiesId[i]);
+            var entity = this.findEntity(entitiesId[ i ]);
         } catch (e) {
             entitiesId.splice(i, 1);
             this.setIndexStorage('id', entitiesId);
@@ -289,19 +289,19 @@ Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesS
         }
 
         for (var j = 0; j < indexNames.length; j++) {
-            var indexName = indexNames[j];
+            var indexName = indexNames[ j ];
 
             this.addIndex(
                 indexName,
-                indexesDefinitions[indexName].getIndex(entity),
+                indexesDefinitions[ indexName ].getIndex(entity),
                 entity.id,
-                indexes[indexName]
+                indexes[ indexName ]
             );
         }
     }
 
     if (returnOne) {
-        return indexes[indexNames[0]];
+        return indexes[ indexNames[ 0 ] ];
     } else {
         return indexes;
     }
@@ -338,22 +338,22 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
 
     // INDEX
     var entityDefinition = this.getEntityDefinition();
-    if (entityDefinition.indexes[field] !== undefined) {
+    if (entityDefinition.indexes[ field ] !== undefined) {
         var index      = this.getIndexStorage(field);
-        var indexValue = entityDefinition.indexes[field].transformIndex(value);
+        var indexValue = entityDefinition.indexes[ field ].transformIndex(value);
 
         if (justOne) {
-            if (index[indexValue] && index[indexValue][0]) {
-                return [ this.findEntity(index[indexValue][0]) ];
+            if (index[ indexValue ] && index[ indexValue ][ 0 ]) {
+                return [ this.findEntity(index[ indexValue ][ 0 ]) ];
             } else {
                 return [];
             }
         } else {
             var entities = [];
 
-            if (index[indexValue]) {
-                for (var i = 0; i < index[indexValue].length; i++) {
-                    entities.push(this.findEntity(index[indexValue][i]));
+            if (index[ indexValue ]) {
+                for (var i = 0; i < index[ indexValue ].length; i++) {
+                    entities.push(this.findEntity(index[ indexValue ][ i ]));
                 }
             }
 
@@ -366,7 +366,7 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
 
     var entities = this.query(
         function(entity) {
-            return entity[field] === value;
+            return entity[ field ] === value;
         }
     );
 
@@ -380,8 +380,8 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
     }
 
     if (justOne) {
-        if (entities[0]) {
-            return [ entities[0] ];
+        if (entities[ 0 ]) {
+            return [ entities[ 0 ] ];
         } else {
             return [];
         }
@@ -393,7 +393,7 @@ Repository.prototype.findBy = Repository.prototype._findBy = function(field, val
 Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
     return this.query(
         function(entity) {
-            return collection.indexOf(entity[field]) !== -1;
+            return collection.indexOf(entity[ field ]) !== -1;
         }
     );
 };
@@ -438,7 +438,7 @@ Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(fiel
     var entities = this.findBy(field, value, true);
 
     if (entities.length > 0) {
-        return entities[0];
+        return entities[ 0 ];
     }
 
     return null;
@@ -463,16 +463,16 @@ Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStora
         if (this.getEntityDefinition().fields.hasOwnProperty(field)) {
             storageMethod = this.$manager.getMethodName('get', field, 'ForStorage');
 
-            var dataKey = useShortCut ? (this.getEntityDefinition().fields[field].shortcut || field) : field;
+            var dataKey = useShortCut ? (this.getEntityDefinition().fields[ field ].shortcut || field) : field;
 
-            if (this.$manager.checkType(entity[storageMethod], 'function')) {
-                data[dataKey] = entity[storageMethod]();
+            if (this.$manager.checkType(entity[ storageMethod ], 'function')) {
+                data[ dataKey ] = entity[ storageMethod ]();
             } else {
-                data[dataKey] = entity[this.$manager.getMethodName('get', field)]();
+                data[ dataKey ] = entity[ this.$manager.getMethodName('get', field) ]();
             }
 
-            if (removeNull && data[dataKey] === null) {
-                delete data[dataKey];
+            if (removeNull && data[ dataKey ] === null) {
+                delete data[ dataKey ];
             }
         }
     }
@@ -493,7 +493,7 @@ Repository.prototype.getIndexStorageKey = Repository.prototype._getIndexStorageK
         [
             this.getStorageKeyName(),
             this.$manager.$INDEX_PREFIX + (
-                this.$manager.$useShortcut ? this.getEntityDefinition().indexes[fieldName].shortcut : fieldName
+                this.$manager.$useShortcut ? this.getEntityDefinition().indexes[ fieldName ].shortcut : fieldName
             )
         ]
     );
@@ -527,7 +527,8 @@ Repository.prototype.getIndexStorage = Repository.prototype._getIndexStorage = f
     return this.$manager.getFromCache(entityName, cacheName);
 };
 
-Repository.prototype.__init__ = function() {};
+Repository.prototype.__init__ = function() {
+};
 
 Repository.prototype.isValid = Repository.prototype._isValid = function(entity) {
     var entityDefinition = this.getEntityDefinition();
@@ -537,8 +538,8 @@ Repository.prototype.isValid = Repository.prototype._isValid = function(entity) 
     for (var fieldName in fields) {
         var data = entity.get(fieldName);
 
-        if (fields[fieldName].nullable === false
-        && entity.get(fieldName) === null) {
+        if (fields[ fieldName ].nullable === false
+            && entity.get(fieldName) === null) {
             return false;
         }
     }
@@ -546,7 +547,7 @@ Repository.prototype.isValid = Repository.prototype._isValid = function(entity) 
     var relations = entityDefinition.relations;
 
     for (var fieldName in relations) {
-        var relation = relations[fieldName];
+        var relation = relations[ fieldName ];
 
         if (relation.referencedField === undefined) {
             var data = entity.get(fieldName);
@@ -557,7 +558,7 @@ Repository.prototype.isValid = Repository.prototype._isValid = function(entity) 
                 }
             } else if (relation.type === 'many') {
                 for (var i = 0; i < data.length; i++) {
-                    if (data[i] < 0) {
+                    if (data[ i ] < 0) {
                         return false;
                     }
                 }
@@ -574,21 +575,21 @@ Repository.prototype.loadEntity = Repository.prototype._loadEntity = function(en
     var shortcuts = this.getEntityDefinition().shortcuts;
 
     for (field in data) {
-        var value = data[field];
+        var value = data[ field ];
 
-        field = shortcuts[field] || field;
+        field = shortcuts[ field ] || field;
 
         methodSet = this.$manager.getMethodName('set', field, 'FromStorage');
 
-        if (!entity[methodSet] || !this.$manager.checkType(entity[methodSet], 'function')) {
+        if (!entity[ methodSet ] || !this.$manager.checkType(entity[ methodSet ], 'function')) {
             methodSet = this.$manager.getMethodName('set', field);
 
-            if (!entity[methodSet] || !this.$manager.checkType(entity[methodSet], 'function')) {
+            if (!entity[ methodSet ] || !this.$manager.checkType(entity[ methodSet ], 'function')) {
                 continue;
             }
         }
 
-        entity[methodSet](value);
+        entity[ methodSet ](value);
     }
 
     return entity;
@@ -600,7 +601,7 @@ Repository.prototype.query = Repository.prototype._query = function(filter) {
 
     for (var i = 0; i < entitiesId.length; i++) {
         try {
-            var entity = this.findEntity(entitiesId[i]);
+            var entity = this.findEntity(entitiesId[ i ]);
         } catch (e) {
             entitiesId.splice(i, 1);
             this.setIndexStorage('id', entitiesId);
@@ -662,7 +663,7 @@ Repository.prototype.remove = Repository.prototype._remove = function(data, fire
             if (fieldName !== 'id') {
                 this.removeIndex(
                     fieldName,
-                    entityDefinition.indexes[fieldName].getIndex(entity),
+                    entityDefinition.indexes[ fieldName ].getIndex(entity),
                     id
                 );
             }
@@ -700,17 +701,18 @@ Repository.prototype.removeCollection = Repository.prototype._removeCollection =
 
     for (var i = 0; i < collection.length; i++) {
         try {
-            var item = collection[i];
+            var item = collection[ i ];
 
             this.remove(
-                collection[i],
+                collection[ i ],
                 fireEvents
             );
 
             if (collection.indexOf(item) === -1) {
                 i--;
             }
-        } catch (e) {}
+        } catch (e) {
+        }
     }
 
     console.groupEnd();
@@ -725,7 +727,7 @@ Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = funct
         previousIds = this.$manager.clone(previousIds);
 
         for (var i = 0; i < collection.length; i++) {
-            var id = this.$manager.extractIdFromData(collection[i]);
+            var id = this.$manager.extractIdFromData(collection[ i ]);
 
             var index = previousIds.indexOf(id);
 
@@ -751,15 +753,15 @@ Repository.prototype.removeIndex = Repository.prototype._removeIndex = function(
         return false;
     }
 
-    var index = this.getIndexStorage(fieldName);
+    var index  = this.getIndexStorage(fieldName);
     var indexOf, fieldIndex;
-    fieldValue = this.getEntityDefinition().indexes[fieldName].transformIndex(fieldValue);
+    fieldValue = this.getEntityDefinition().indexes[ fieldName ].transformIndex(fieldValue);
 
     if (fieldName === 'id') {
         fieldIndex = index;
         indexOf    = index.indexOf(fieldValue);
     } else {
-        fieldIndex = index[fieldValue];
+        fieldIndex = index[ fieldValue ];
         indexOf    = fieldIndex ? fieldIndex.indexOf(id) : -1;
     }
 
@@ -767,7 +769,7 @@ Repository.prototype.removeIndex = Repository.prototype._removeIndex = function(
         fieldIndex.splice(indexOf, 1);
 
         if (fieldName !== 'id' && fieldIndex.length === 0) {
-            delete index[fieldValue];
+            delete index[ fieldValue ];
         }
 
         this.setIndexStorage(fieldName, index);
@@ -816,10 +818,10 @@ Repository.prototype.save = Repository.prototype._save = function(entity, fireEv
     }
 
     for (var i = 0; i < indexFields.length; i++) {
-        var indexField = indexFields[i];
+        var indexField = indexFields[ i ];
 
-        var newValue = entity[indexField];
-        var oldValue = entity.$oldValues[indexField];
+        var newValue = entity[ indexField ];
+        var oldValue = entity.$oldValues[ indexField ];
 
         if (newValue !== oldValue || changingId) {
             this.removeIndex(
@@ -863,8 +865,8 @@ Repository.prototype.saveCollection = Repository.prototype._saveCollection = fun
         console.group('Save collection');
 
         for (var i = 0; i < collection.length; i++) {
-            if (collection[i] instanceof Entity && collection[i].$repository === this) {
-                this.save(collection[i], fireEvents);
+            if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
+                this.save(collection[ i ], fireEvents);
             }
         }
 
@@ -879,25 +881,25 @@ Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = functio
 
     var originalEntityName = this.$entityName;
 
-    for(var entityName in manager.$entityDefinitions) {
-        var entityDefinition = manager.$entityDefinitions[entityName];
+    for (var entityName in manager.$entityDefinitions) {
+        var entityDefinition = manager.$entityDefinitions[ entityName ];
 
         for (var field in entityDefinition.relations) {
-            var relation             = entityDefinition.relations[field];
+            var relation = entityDefinition.relations[ field ];
 
             if (relation.entity === originalEntityName && relation.type === 'many') {
-                var getterMethod = manager.getMethodName('get', relation.referencedField);
+                var getterMethod         = manager.getMethodName('get', relation.referencedField);
                 var relationPluralName   = manager.getRelationName(relation);
                 var relationGetterMethod = manager.getMethodName('get', relationPluralName);
 
-                for (var id in manager.$cache[entityName]) {
-                    var cachedEntity  = manager.$cache[entityName][id];
+                for (var id in manager.$cache[ entityName ]) {
+                    var cachedEntity = manager.$cache[ entityName ][ id ];
 
-                    if (cachedEntity.id === entity[getterMethod]()) {
+                    if (cachedEntity.id === entity[ getterMethod ]()) {
                         if (!manager.hasInCache(entity)) {
                             if (!manager.hasRelationCache(cachedEntity, relation)) {
                                 // load "normal" data before insert memory data in relation cache
-                                cachedEntity[relationGetterMethod]();
+                                cachedEntity[ relationGetterMethod ]();
                             }
 
                             var relationCache      = manager.getRelationCache(cachedEntity, relation) || [];
@@ -993,16 +995,15 @@ Repository.prototype.setIndexStorage = Repository.prototype._setIndexStorage = f
 };
 
 
-
 /*
-   #####
-  #     # #####  ####  #####    ##    ####  ######
-  #         #   #    # #    #  #  #  #    # #
-   #####    #   #    # #    # #    # #      #####
-        #   #   #    # #####  ###### #  ### #
-  #     #   #   #    # #   #  #    # #    # #
-   #####    #    ####  #    # #    #  ####  ######
-*/
+ #####
+ #     # #####  ####  #####    ##    ####  ######
+ #         #   #    # #    #  #  #  #    # #
+ #####    #   #    # #    # #    # #      #####
+ #   #   #    # #####  ###### #  ### #
+ #     #   #   #    # #   #  #    # #    # #
+ #####    #    ####  #    # #    #  ####  ######
+ */
 function Storage(prefix) {
     'use strict';
 
@@ -1063,16 +1064,15 @@ Storage.prototype.unset = function(key) {
 };
 
 
-
 /*
-  #        #####  ######  #     #
-  #       #     # #     # ##   ##   ##   #    #   ##    ####  ###### #####
-  #       #       #     # # # # #  #  #  ##   #  #  #  #    # #      #    #
-  #        #####  #     # #  #  # #    # # #  # #    # #      #####  #    #
-  #             # #     # #     # ###### #  # # ###### #  ### #      #####
-  #       #     # #     # #     # #    # #   ## #    # #    # #      #   #
-  #######  #####  ######  #     # #    # #    # #    #  ####  ###### #    #
-*/
+ #        #####  ######  #     #
+ #       #     # #     # ##   ##   ##   #    #   ##    ####  ###### #####
+ #       #       #     # # # # #  #  #  ##   #  #  #  #    # #      #    #
+ #        #####  #     # #  #  # #    # # #  # #    # #      #####  #    #
+ #             # #     # #     # ###### #  # # ###### #  ### #      #####
+ #       #     # #     # #     # #    # #   ## #    # #    # #      #   #
+ #######  #####  ######  #     # #    # #    # #    #  ####  ###### #    #
+ */
 function LSDManager(injectStorage) {
     'use strict';
 
@@ -1087,9 +1087,9 @@ function LSDManager(injectStorage) {
     this.$repositories      = {};
     this.$repositoryClasses = {};
 
-    this.$INDEX_PREFIX      = '$';
-    this.$useIndex          = true;
-    this.$useShortcut       = true;
+    this.$INDEX_PREFIX = '$';
+    this.$useIndex     = true;
+    this.$useShortcut  = true;
 
     if (injectStorage) {
         this.$storage = injectStorage;
@@ -1121,11 +1121,11 @@ LSDManager.prototype.addToCache = LSDManager.prototype._addToCache = function(en
         entityName = entityName.$repository.$entityName;
     }
 
-    if (this.$cache[entityName] === undefined) {
-        this.$cache[entityName] = {};
+    if (this.$cache[ entityName ] === undefined) {
+        this.$cache[ entityName ] = {};
     }
 
-    this.$cache[entityName][id] = value;
+    this.$cache[ entityName ][ id ] = value;
 
     return this;
 };
@@ -1139,11 +1139,11 @@ LSDManager.prototype.clone = LSDManager.prototype._clone = function(object) {
         object instanceof Array ? [] : {},
         object
     );
-}
+};
 
 LSDManager.prototype.deleteCollectionFromCache = LSDManager.prototype._deleteCollectionFromCache = function(collection) {
     for (var i = 0; i < collection.length; i++) {
-        this.deleteFromCache(collection[i]);
+        this.deleteFromCache(collection[ i ]);
     }
 };
 
@@ -1161,9 +1161,9 @@ LSDManager.prototype.deleteFromCache = LSDManager.prototype._deleteFromCache = f
     }
 
     if (entityId === undefined && this.hasInCache(entityName)) {
-        delete this.$cache[entityName];
+        delete this.$cache[ entityName ];
     } else if (entityId !== undefined && this.hasInCache(entityName, entityId)) {
-        delete this.$cache[entityName][entityId];
+        delete this.$cache[ entityName ][ entityId ];
     }
 
     return this;
@@ -1180,10 +1180,10 @@ LSDManager.prototype.enableIndexation = LSDManager.prototype._enableIndexation =
 LSDManager.prototype.extend = LSDManager.prototype._extend = function(child, parent) {
     for (var property in parent) {
         if (parent.hasOwnProperty(property)) {
-            if (parent[property] instanceof Array) {
-                child[property] = this.extend([], parent[property]);
+            if (parent[ property ] instanceof Array) {
+                child[ property ] = this.extend([], parent[ property ]);
             } else {
-                child[property] = parent[property];
+                child[ property ] = parent[ property ];
             }
         }
     }
@@ -1219,20 +1219,20 @@ LSDManager.prototype.filter = LSDManager.prototype._filter = function(data, filt
     var results = [];
 
     for (var i = 0; i < data.length; i++) {
-        if (filter(data[i])) {
-            results.push(data[i]);
+        if (filter(data[ i ])) {
+            results.push(data[ i ]);
         }
     }
 
-    return isArray ? results : results[0];
+    return isArray ? results : results[ 0 ];
 };
 
 LSDManager.prototype.fireEvents = LSDManager.prototype._fireEvents = function(eventName, entity) {
-    if (this.$events[eventName] !== undefined) {
-        console.group(Object.keys(this.$events[eventName]).length + ' callback(s) for event ' + eventName);
+    if (this.$events[ eventName ] !== undefined) {
+        console.group(Object.keys(this.$events[ eventName ]).length + ' callback(s) for event ' + eventName);
 
-        for (var i in this.$events[eventName]) {
-            this.$events[eventName][i](entity);
+        for (var i in this.$events[ eventName ]) {
+            this.$events[ eventName ][ i ](entity);
         }
 
         console.groupEnd();
@@ -1255,7 +1255,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
 
                     for (i in value) {
                         if (value.hasOwnProperty(i)) {
-                            tmp.push(value[i]);
+                            tmp.push(value[ i ]);
                         }
                     }
 
@@ -1263,17 +1263,17 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                 } else {
                     value = [ value ];
                 }
-            break;
+                break;
 
             case 'boolean':
-                if ( value === 'false'  ||
-                (valueType === 'array'  && value.length === 0) ||
-                (valueType === 'object' && Object.keys(value).length === 0)) {
+                if (value === 'false' ||
+                    (valueType === 'array' && value.length === 0) ||
+                    (valueType === 'object' && Object.keys(value).length === 0)) {
                     value = false;
                 } else {
                     value = !!value;
                 }
-            break;
+                break;
 
             case 'float':
             case 'integer':
@@ -1298,14 +1298,14 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                         value = 0;
                     }
                 }
-            break;
+                break;
 
             case 'object':
                 if (valueType === 'array') {
                     tmp = {};
 
                     for (i = 0; i < value.length; i++) {
-                        tmp[i] = value[i];
+                        tmp[ i ] = value[ i ];
                     }
 
                     value = tmp;
@@ -1314,7 +1314,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                         0: value
                     };
                 }
-            break;
+                break;
 
             case 'string':
                 if (valueType === 'array' || valueType === 'object') {
@@ -1322,7 +1322,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                 } else {
                     value = String(value);
                 }
-            break;
+                break;
 
             case 'date':
                 if (value === '') {
@@ -1334,7 +1334,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
 
                     value.setHours(0, 0, 0, 0);
                 }
-            break;
+                break;
 
             case 'datetime':
                 if (value === '') {
@@ -1342,7 +1342,7 @@ LSDManager.prototype.fixValueType = LSDManager.prototype._fixValueType = functio
                 } else {
                     value = new Date(value);
                 }
-            break;
+                break;
         }
     }
 
@@ -1358,19 +1358,19 @@ LSDManager.prototype.getDatabaseVersion = LSDManager.prototype._getCurrentDataba
 };
 
 LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(entityName) {
-    if (!this.$entity[entityName]) {
+    if (!this.$entity[ entityName ]) {
         var manager = this;
 
         var getPropertyGetter = function(field) {
             return function() {
-                return this[manager.getMethodName('get', field)]();
-            }
+                return this[ manager.getMethodName('get', field) ]();
+            };
         };
 
         var getPropertySetter = function(field) {
             return function(value) {
-                return this[manager.getMethodName('set', field)](value);
-            }
+                return this[ manager.getMethodName('set', field) ](value);
+            };
         };
 
         var getGetter = function(field) {
@@ -1440,12 +1440,12 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                         var parts = value.split(/[\sT]/);
 
-                        var dateParts = parts[0].split('-');
-                        date.setFullYear(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                        var dateParts = parts[ 0 ].split('-');
+                        date.setFullYear(dateParts[ 0 ], dateParts[ 1 ] - 1, dateParts[ 2 ]);
 
-                        var timeParts = parts[1].split(':');
+                        var timeParts = parts[ 1 ].split(':');
 
-                        date.setHours(timeParts[0], timeParts[1], timeParts[2], 0);
+                        date.setHours(timeParts[ 0 ], timeParts[ 1 ], timeParts[ 2 ], 0);
                     }
 
                     return this.set(field, date);
@@ -1453,7 +1453,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             }
         };
 
-        this.$entity[entityName] = this.clone(this.getEntityClass(entityName));
+        this.$entity[ entityName ] = this.clone(this.getEntityClass(entityName));
 
         var field, method;
 
@@ -1461,40 +1461,40 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
         for (field in this.getEntityDefinition(entityName).fields) {
             if (this.getEntityDefinition(entityName).fields.hasOwnProperty(field)) {
-                properties[field] = {
+                properties[ field ] = {
                     get: getPropertyGetter(field),
                     set: getPropertySetter(field)
                 };
 
                 method = this.getMethodName('get', field);
 
-                if (this.$entity[entityName][method] === undefined) {
-                    this.$entity[entityName][method] = getGetter(field);
+                if (this.$entity[ entityName ][ method ] === undefined) {
+                    this.$entity[ entityName ][ method ] = getGetter(field);
                 }
 
                 method = this.getMethodName('set', field);
 
-                if (this.$entity[entityName][method] === undefined) {
-                    this.$entity[entityName][method] = getSetter(field);
+                if (this.$entity[ entityName ][ method ] === undefined) {
+                    this.$entity[ entityName ][ method ] = getSetter(field);
                 }
 
                 method = this.getMethodName('get', field, 'ForStorage');
 
-                if (this.$entity[entityName][method] === undefined) {
-                    var getter = getGetterForStorage(field, this.getEntityDefinition(entityName).fields[field].type);
+                if (this.$entity[ entityName ][ method ] === undefined) {
+                    var getter = getGetterForStorage(field, this.getEntityDefinition(entityName).fields[ field ].type);
 
                     if (getter) {
-                        this.$entity[entityName][method] = getter;
+                        this.$entity[ entityName ][ method ] = getter;
                     }
                 }
 
                 method = this.getMethodName('set', field, 'FromStorage');
 
-                if (this.$entity[entityName][method] === undefined) {
-                    var setter = getSetterFromStorage(field, this.getEntityDefinition(entityName).fields[field].type);
+                if (this.$entity[ entityName ][ method ] === undefined) {
+                    var setter = getSetterFromStorage(field, this.getEntityDefinition(entityName).fields[ field ].type);
 
                     if (setter) {
-                        this.$entity[entityName][method] = setter;
+                        this.$entity[ entityName ][ method ] = setter;
                     }
                 }
             }
@@ -1545,7 +1545,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
                 }
 
                 return manager.filter(data, filter);
-            }
+            };
         };
 
         var addCurrentToRelation = function(entity, value) {
@@ -1553,8 +1553,8 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             var valueRelation;
 
             for (var relationName in valueRelations) {
-                if (valueRelations[relationName].entity === entity.$repository.$entityName) {
-                    valueRelation = valueRelations[relationName];
+                if (valueRelations[ relationName ].entity === entity.$repository.$entityName) {
+                    valueRelation = valueRelations[ relationName ];
 
                     break;
                 }
@@ -1570,19 +1570,19 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
             if (valueRelation.type === 'one') {
                 getterMethod = manager.getMethodName('get', valueRelationName);
 
-                if (value[getterMethod] !== undefined && value[getterMethod]() !== entity) {
+                if (value[ getterMethod ] !== undefined && value[ getterMethod ]() !== entity) {
                     var setterMethod = manager.getMethodName('set', valueRelationName);
 
-                    value[setterMethod](entity);
+                    value[ setterMethod ](entity);
                 }
             } else {
                 getterMethod = manager.getMethodName('get', valueRelationName);
 
-                if (value[getterMethod] !== undefined && value[getterMethod]().indexOf(entity) === -1) {
+                if (value[ getterMethod ] !== undefined && value[ getterMethod ]().indexOf(entity) === -1) {
                     valueRelationName = manager.getRelationName(valueRelation, false);
-                    var adderMethod = manager.getMethodName('add', valueRelationName);
+                    var adderMethod   = manager.getMethodName('add', valueRelationName);
 
-                    value[adderMethod](entity);
+                    value[ adderMethod ](entity);
                 }
             }
         };
@@ -1595,8 +1595,8 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
             return function(value) {
                 if (value instanceof Entity) {
-                    if (this[setterMethod] !== undefined) {
-                        this[setterMethod](value.getId());
+                    if (this[ setterMethod ] !== undefined) {
+                        this[ setterMethod ](value.getId());
                     }
 
                     manager.setRelationCache(this, relation, value);
@@ -1616,7 +1616,7 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
                 if (relationCache === undefined) {
                     // call getter
-                    relationCache = this[manager.getRelationName(relation).lowerCaseFirstLetter()];
+                    relationCache = this[ manager.getRelationName(relation).lowerCaseFirstLetter() ];
 
                     manager.setRelationCache(this, relation, relationCache);
                 }
@@ -1633,69 +1633,69 @@ LSDManager.prototype.getEntity = LSDManager.prototype._getEntity = function(enti
 
         var getPropertyRelationGetter = function(relationName) {
             return function() {
-                return this[manager.getMethodName('get', relationName)]();
-            }
+                return this[ manager.getMethodName('get', relationName) ]();
+            };
         };
 
         var getPropertyRelationSetter = function(relationName) {
             return function(value) {
-                return this[manager.getMethodName('set', relationName)](value);
-            }
+                return this[ manager.getMethodName('set', relationName) ](value);
+            };
         };
 
         for (field in this.getEntityDefinition(entityName).relations) {
             if (this.getEntityDefinition(entityName).relations.hasOwnProperty(field)) {
-                var relation = this.getEntityDefinition(entityName).relations[field];
+                var relation = this.getEntityDefinition(entityName).relations[ field ];
 
                 var relationPluralName   = this.getRelationName(relation);
                 var relationSingularName = this.getRelationName(relation, false);
 
-                properties[relationPluralName.lowerCaseFirstLetter()] = {
+                properties[ relationPluralName.lowerCaseFirstLetter() ] = {
                     get: getPropertyRelationGetter(relationPluralName),
                     set: getPropertyRelationSetter(relationPluralName)
                 };
 
                 getterMethod = this.getMethodName('get', relationPluralName);
-                var getter = getRelationGetter(field, relation);
+                var getter   = getRelationGetter(field, relation);
 
-                if (this.$entity[entityName]['_' + getterMethod] === undefined) {
-                    this.$entity[entityName]['_' + getterMethod] = getter;
+                if (this.$entity[ entityName ][ '_' + getterMethod ] === undefined) {
+                    this.$entity[ entityName ][ '_' + getterMethod ] = getter;
                 }
 
-                if (this.$entity[entityName][getterMethod] === undefined) {
-                    this.$entity[entityName][getterMethod] = getter;
+                if (this.$entity[ entityName ][ getterMethod ] === undefined) {
+                    this.$entity[ entityName ][ getterMethod ] = getter;
                 }
 
                 var setterMethod = this.getMethodName('set', relationPluralName);
-                var setter = getRelationSetter(field, relation);
+                var setter       = getRelationSetter(field, relation);
 
-                if (this.$entity[entityName]['_' + setterMethod] === undefined) {
-                    this.$entity[entityName]['_' + setterMethod] = setter;
+                if (this.$entity[ entityName ][ '_' + setterMethod ] === undefined) {
+                    this.$entity[ entityName ][ '_' + setterMethod ] = setter;
                 }
 
-                if (this.$entity[entityName][setterMethod] === undefined) {
-                    this.$entity[entityName][setterMethod] = setter;
+                if (this.$entity[ entityName ][ setterMethod ] === undefined) {
+                    this.$entity[ entityName ][ setterMethod ] = setter;
                 }
 
                 if (relation.type === 'many') {
                     var adderMethod = this.getMethodName('add', relationSingularName);
-                    var adder = getRelationAdder(field, relation);
+                    var adder       = getRelationAdder(field, relation);
 
-                    if (this.$entity[entityName]['_' + adderMethod] === undefined) {
-                        this.$entity[entityName]['_' + adderMethod] = adder;
+                    if (this.$entity[ entityName ][ '_' + adderMethod ] === undefined) {
+                        this.$entity[ entityName ][ '_' + adderMethod ] = adder;
                     }
 
-                    if (this.$entity[entityName][adderMethod] === undefined) {
-                        this.$entity[entityName][adderMethod] = adder;
+                    if (this.$entity[ entityName ][ adderMethod ] === undefined) {
+                        this.$entity[ entityName ][ adderMethod ] = adder;
                     }
                 }
             }
         }
 
-        this.$entityProperties[entityName] = properties;
+        this.$entityProperties[ entityName ] = properties;
     }
 
-    return this.$entity[entityName];
+    return this.$entity[ entityName ];
 };
 
 LSDManager.prototype.getDataPrefix = LSDManager.prototype._getDataPrefix = function() {
@@ -1703,16 +1703,16 @@ LSDManager.prototype.getDataPrefix = LSDManager.prototype._getDataPrefix = funct
 };
 
 LSDManager.prototype.getEntityClass = LSDManager.prototype._getEntityClass = function(entityName) {
-    if (this.$entityClasses[entityName]) {
-        return this.$entityClasses[entityName];
+    if (this.$entityClasses[ entityName ]) {
+        return this.$entityClasses[ entityName ];
     }
 
     return {};
 };
 
 LSDManager.prototype.getEntityDefinition = LSDManager.prototype._getEntityDefinition = function(entityName) {
-    if (this.$entityDefinitions[entityName]) {
-        return this.$entityDefinitions[entityName];
+    if (this.$entityDefinitions[ entityName ]) {
+        return this.$entityDefinitions[ entityName ];
     }
 
     return {};
@@ -1720,7 +1720,7 @@ LSDManager.prototype.getEntityDefinition = LSDManager.prototype._getEntityDefini
 
 LSDManager.prototype.getFromCache = LSDManager.prototype._getFromCache = function(entityName, entityId) {
     if (this.hasInCache(entityName, entityId)) {
-        return this.$cache[entityName][entityId];
+        return this.$cache[ entityName ][ entityId ];
     }
 
     return null;
@@ -1738,8 +1738,8 @@ LSDManager.prototype.getNewId = LSDManager.prototype._getNewId = function(idFact
     var id;
 
     idFactory = idFactory || function() {
-        return -(new Date().getTime());
-    };
+            return -(new Date().getTime());
+        };
 
     do {
         id = idFactory();
@@ -1751,12 +1751,12 @@ LSDManager.prototype.getNewId = LSDManager.prototype._getNewId = function(idFact
 };
 
 LSDManager.prototype.getRelationCache = LSDManager.prototype._getRelationCache = function(entity, relation) {
-    return entity.$relationsCache[this.getRelationName(relation)];
+    return entity.$relationsCache[ this.getRelationName(relation) ];
 };
 
 LSDManager.prototype.getRelationName = LSDManager.prototype._getRelationName = function(relation, pluralize) {
     pluralize = pluralize === undefined ? true : pluralize;
-    var name = relation.name || relation.entity;
+    var name  = relation.name || relation.entity;
 
     if (pluralize && relation.type === 'many') {
         if (name.substr(-1) === 'y') {
@@ -1785,22 +1785,22 @@ LSDManager.prototype.getRepository = LSDManager.prototype._getRepository = funct
     if (!this.isValidEntity(entityName)) {
         throw new Error('Unknown repository for ' + entityName);
     } else {
-        if (!this.$repositories[entityName]) {
-            this.$repositories[entityName] = this.extend(
+        if (!this.$repositories[ entityName ]) {
+            this.$repositories[ entityName ] = this.extend(
                 new Repository(this, entityName),
                 this.getRepositoryClass(entityName)
             );
 
-            this.$repositories[entityName].__init__();
+            this.$repositories[ entityName ].__init__();
         }
 
-        return this.$repositories[entityName];
+        return this.$repositories[ entityName ];
     }
 };
 
 LSDManager.prototype.getRepositoryClass = LSDManager.prototype._getRepositoryClass = function(entityName) {
-    if (this.$repositoryClasses[entityName]) {
-        return this.$repositoryClasses[entityName];
+    if (this.$repositoryClasses[ entityName ]) {
+        return this.$repositoryClasses[ entityName ];
     }
 
     return {};
@@ -1818,11 +1818,11 @@ LSDManager.prototype.getType = LSDManager.prototype._getType = function(o) {
         },
         type;
 
-    if ((type = TYPES[typeof o]) !== undefined) {
+    if ((type = TYPES[ typeof o ]) !== undefined) {
         return type;
     }
 
-    if ((type = TYPES[TOSTRING.call(o)]) !== undefined) {
+    if ((type = TYPES[ TOSTRING.call(o) ]) !== undefined) {
         return type;
     }
 
@@ -1835,28 +1835,29 @@ LSDManager.prototype.getType = LSDManager.prototype._getType = function(o) {
 
 LSDManager.prototype.hasInCache = LSDManager.prototype._hasInCache = function(entityName, entityId) {
     if (entityId === undefined) {
-        return this.$cache[entityName] !== undefined;
+        return this.$cache[ entityName ] !== undefined;
     }
 
-    return this.$cache[entityName] !== undefined && this.$cache[entityName][entityId] !== undefined;
+    return this.$cache[ entityName ] !== undefined && this.$cache[ entityName ][ entityId ] !== undefined;
 };
 
 LSDManager.prototype.hasRelationCache = LSDManager.prototype._hasRelationCache = function(entity, relation) {
-    return entity.$relationsCache[this.getRelationName(relation)] !== undefined;
+    return entity.$relationsCache[ this.getRelationName(relation) ] !== undefined;
 };
 
-LSDManager.prototype.__init__ = function() {};
+LSDManager.prototype.__init__ = function() {
+};
 
 LSDManager.prototype.isValidEntity = LSDManager.prototype._isValidEntity = function(entityName) {
-    if (this.checkType(this.$entityDefinitions[entityName], 'object')) {
+    if (this.checkType(this.$entityDefinitions[ entityName ], 'object')) {
         return true;
     }
 
-    if (this.checkType(this.$entityClasses[entityName],     'object')) {
+    if (this.checkType(this.$entityClasses[ entityName ], 'object')) {
         return true;
     }
 
-    if (this.checkType(this.$repositoryClasses[entityName], 'object')) {
+    if (this.checkType(this.$repositoryClasses[ entityName ], 'object')) {
         return true;
     }
 
@@ -1867,7 +1868,7 @@ LSDManager.prototype.migrate = LSDManager.prototype._migrate = function() {
     var start = new Date().getTime();
 
     for (var i = 0; i < LSDManager.$migrations.length; i++) {
-        LSDManager.$migrations[i](this);
+        LSDManager.$migrations[ i ](this);
     }
 
     this.storeDatabaseVersion();
@@ -1890,11 +1891,11 @@ LSDManager.prototype.needMigration = LSDManager.prototype._needMigration = funct
 };
 
 LSDManager.prototype.registerEvent = LSDManager.prototype._registerEvent = function(eventName, callback) {
-    if (this.$events[eventName] === undefined) {
-        this.$events[eventName] = {};
+    if (this.$events[ eventName ] === undefined) {
+        this.$events[ eventName ] = {};
     }
 
-    this.$events[eventName][this.$eventId] = callback;
+    this.$events[ eventName ][ this.$eventId ] = callback;
 
     return this.$eventId++;
 };
@@ -1904,7 +1905,7 @@ LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = f
 
     for (var entityName in this.$entityDefinitions) {
         var indexFields = Object.keys(
-            this.$entityDefinitions[entityName].indexes
+            this.$entityDefinitions[ entityName ].indexes
         );
 
         if (indexFields.length > 1) {
@@ -1913,10 +1914,10 @@ LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = f
             console.log('Reindex entity "' + entityName + '" for field(s): ' + indexFields.join(', '));
 
             var repository = this.getRepository(entityName);
-            var indexes = repository.createIndexesStorage(indexFields);
+            var indexes    = repository.createIndexesStorage(indexFields);
 
             for (var fieldName in indexes) {
-                repository.setIndexStorage(fieldName, indexes[fieldName]);
+                repository.setIndexStorage(fieldName, indexes[ fieldName ]);
             }
         }
     }
@@ -1929,19 +1930,19 @@ LSDManager.prototype.removeCollection = LSDManager.prototype._removeCollection =
     var collectionByRepository = {};
 
     for (var i = 0; i < collection.length; i++) {
-        var item       = collection[i];
+        var item       = collection[ i ];
         var entityName = item.$repository.$entityName;
 
-        if (collectionByRepository[entityName] === undefined) {
-            collectionByRepository[entityName] = [];
+        if (collectionByRepository[ entityName ] === undefined) {
+            collectionByRepository[ entityName ] = [];
         }
 
-        collectionByRepository[entityName].push(item);
+        collectionByRepository[ entityName ].push(item);
     }
 
     for (var entityName in collectionByRepository) {
         this.getRepository(entityName).removeCollection(
-            collectionByRepository[entityName],
+            collectionByRepository[ entityName ],
             fireEvents
         );
     }
@@ -1950,7 +1951,7 @@ LSDManager.prototype.removeCollection = LSDManager.prototype._removeCollection =
 };
 
 LSDManager.prototype.removeRelationCache = LSDManager.prototype._removeRelationCache = function(entity, relation) {
-    delete entity.$relationsCache[this.getRelationName(relation)];
+    delete entity.$relationsCache[ this.getRelationName(relation) ];
 };
 
 LSDManager.prototype.resetCache = LSDManager.prototype._resetCache = function() {
@@ -1962,23 +1963,23 @@ LSDManager.prototype.resetCache = LSDManager.prototype._resetCache = function() 
 LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsCache = function(entity) {
     var originalEntityName = entity.$repository.$entityName;
 
-    for(var entityName in this.$entityDefinitions) {
-        var entityDefinition = this.$entityDefinitions[entityName];
+    for (var entityName in this.$entityDefinitions) {
+        var entityDefinition = this.$entityDefinitions[ entityName ];
 
         for (var field in entityDefinition.relations) {
-            var relation = entityDefinition.relations[field];
+            var relation = entityDefinition.relations[ field ];
 
             if (relation.entity === originalEntityName) {
-                for (var id in this.$cache[entityName]) {
+                for (var id in this.$cache[ entityName ]) {
                     if (id.substr(0, 1) === '$') {
                         continue;
                     }
 
-                    var cachedEntity  = this.$cache[entityName][id];
-                    var getterMethod  = this.getMethodName('get', this.getRelationName(relation));
+                    var cachedEntity = this.$cache[ entityName ][ id ];
+                    var getterMethod = this.getMethodName('get', this.getRelationName(relation));
 
                     try {
-                        var relationValue = cachedEntity[getterMethod]();
+                        var relationValue = cachedEntity[ getterMethod ]();
                     } catch (e) {
                         continue;
                     }
@@ -1987,7 +1988,7 @@ LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsC
                         if (relationValue === entity) {
                             var setterMethod = this.getMethodName('set', this.getRelationName(relation));
 
-                            cachedEntity[setterMethod](null);
+                            cachedEntity[ setterMethod ](null);
                         }
                     } else {
                         var indexOf = relationValue.indexOf(entity);
@@ -2015,13 +2016,13 @@ LSDManager.prototype.setDataPrefix = LSDManager.prototype._setDataPrefix = funct
 };
 
 LSDManager.prototype.setEntity = LSDManager.prototype._setEntity = function(entityName, compiledEntityClass) {
-    this.$entity[entityName] = compiledEntityClass;
+    this.$entity[ entityName ] = compiledEntityClass;
 
     return this;
 };
 
 LSDManager.prototype.setEntityClass = LSDManager.prototype._setEntityClass = function(entityName, entityClass) {
-    this.$entityClasses[entityName] = entityClass;
+    this.$entityClasses[ entityName ] = entityClass;
 
     this.setEntity(entityName, null);
 
@@ -2034,9 +2035,9 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     }
 
     entityDefinition.fields.id = {
-        type     : 'integer',
-        shortcut : '_',
-        index    : true
+        type    : 'integer',
+        shortcut: '_',
+        index   : true
     };
 
     if (entityDefinition.relations === undefined) {
@@ -2047,7 +2048,7 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     if (entityDefinition.shortcut) {
         for (var en in this.$entityDefinitions) {
             if (this.$entityDefinitions.hasOwnProperty(en)) {
-                if (en !== entityName && this.$entityDefinitions[en].shortcut === entityDefinition.shortcut) {
+                if (en !== entityName && this.$entityDefinitions[ en ].shortcut === entityDefinition.shortcut) {
                     console.error(
                         'Try to add a new entity "' + entityName + '" definition ' +
                         'with shortcut "' + entityDefinition.shortcut + '" ' +
@@ -2064,21 +2065,21 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     entityDefinition.shortcuts = {};
     for (var field in entityDefinition.fields) {
         if (entityDefinition.fields.hasOwnProperty(field)) {
-            var shortcut = entityDefinition.fields[field].shortcut;
+            var shortcut = entityDefinition.fields[ field ].shortcut;
 
             if (shortcut) {
-                if (entityDefinition.shortcuts[shortcut]) {
+                if (entityDefinition.shortcuts[ shortcut ]) {
                     console.error(
                         'Try to add a new entity "' + entityName + '" definition ' +
                         'with a field "' + field + '" ' +
                         'with a shortcut "' + shortcut + '" ' +
-                        'but it already exists for field "' + entityDefinition.shortcuts[shortcut] + '".'
+                        'but it already exists for field "' + entityDefinition.shortcuts[ shortcut ] + '".'
                     );
 
                     return;
                 }
 
-                entityDefinition.shortcuts[shortcut] = field;
+                entityDefinition.shortcuts[ shortcut ] = field;
             }
         }
     }
@@ -2091,7 +2092,7 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     var getStandardIndexGetter = function(field) {
         return function(entity) {
             return entity.get(field);
-        }
+        };
     };
 
     var getStandardIndexTransformer = function() {
@@ -2101,18 +2102,18 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
     };
 
     for (var field in entityDefinition.fields) {
-        if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[field].index === true) {
-            entityDefinition.indexes[field] = {
-                shortcut       : entityDefinition.fields[field].shortcut || field,
-                getIndex       : getStandardIndexGetter(field),
-                transformIndex : getStandardIndexTransformer()
+        if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index === true) {
+            entityDefinition.indexes[ field ] = {
+                shortcut      : entityDefinition.fields[ field ].shortcut || field,
+                getIndex      : getStandardIndexGetter(field),
+                transformIndex: getStandardIndexTransformer()
             };
         }
     }
 
     entityDefinition.dependencies = {};
 
-    this.$entityDefinitions[entityName] = entityDefinition;
+    this.$entityDefinitions[ entityName ] = entityDefinition;
 
     this.setEntity(entityName, null);
 
@@ -2122,13 +2123,13 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
 };
 
 LSDManager.prototype.setRelationCache = LSDManager.prototype._setRelationCache = function(entity, relation, value) {
-    entity.$relationsCache[this.getRelationName(relation)] = value;
+    entity.$relationsCache[ this.getRelationName(relation) ] = value;
 
     return this;
 };
 
 LSDManager.prototype.setRepositoryClass = LSDManager.prototype._setRepositoryClass = function(entityName, repositoryClass) {
-    this.$repositoryClasses[entityName] = repositoryClass;
+    this.$repositoryClasses[ entityName ] = repositoryClass;
 
     return this;
 };
@@ -2138,11 +2139,11 @@ LSDManager.prototype.storeDatabaseVersion = LSDManager.prototype._storeDatabaseV
 };
 
 LSDManager.prototype.unregisterEvent = LSDManager.prototype._unregisterEvent = function(eventName, eventId) {
-    if (this.$events[eventName] && this.$events[eventName][eventId]) {
-        delete this.$events[eventName][eventId];
+    if (this.$events[ eventName ] && this.$events[ eventName ][ eventId ]) {
+        delete this.$events[ eventName ][ eventId ];
 
-        if (Object.keys(this.$events[eventName]).length === 0) {
-            delete this.$events[eventName];
+        if (Object.keys(this.$events[ eventName ]).length === 0) {
+            delete this.$events[ eventName ];
         }
     }
 
@@ -2150,22 +2151,22 @@ LSDManager.prototype.unregisterEvent = LSDManager.prototype._unregisterEvent = f
 };
 
 LSDManager.prototype.updateDependencies = LSDManager.prototype._updateDependencies = function() {
-    for(var entityName in this.$entityDefinitions) {
-        var entityDefinition = this.$entityDefinitions[entityName];
+    for (var entityName in this.$entityDefinitions) {
+        var entityDefinition = this.$entityDefinitions[ entityName ];
 
         for (var field in entityDefinition.relations) {
-            var relation = entityDefinition.relations[field];
+            var relation  = entityDefinition.relations[ field ];
             relation.type = relation.type ? relation.type : 'one';
 
             var relatedEntityDefinition = this.getEntityDefinition(relation.entity);
 
             if (relatedEntityDefinition.dependencies) {
-                if (relatedEntityDefinition.dependencies[entityName] === undefined) {
-                    relatedEntityDefinition.dependencies[entityName] = {};
+                if (relatedEntityDefinition.dependencies[ entityName ] === undefined) {
+                    relatedEntityDefinition.dependencies[ entityName ] = {};
                 }
 
-                relatedEntityDefinition.dependencies[entityName][field] = {
-                    type : relation.type
+                relatedEntityDefinition.dependencies[ entityName ][ field ] = {
+                    type: relation.type
                 };
             }
         }
