@@ -126,6 +126,11 @@ Entity.prototype.$remove = Entity.prototype._$remove = function(fireEvents) {
     return this.$repository.remove(this, fireEvents);
 };
 
+Entity.prototype.$reset = Entity.prototype._$reset = function() {
+    this.$values         = this.$manager.clone(this.$oldValues);
+    this.$relationsCache = {};
+};
+
 Entity.prototype.$save = Entity.prototype._$save = function() {
     return this.$repository.save(this);
 };
