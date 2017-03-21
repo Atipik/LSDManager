@@ -6,5 +6,5 @@
   "license"     : "MIT",
   "main"        : "src/LSDManager.js",
   "name"        : "LSDManager",
-  "version"     : "0.30.0"
+  "version"     : "0.30.1"
 }

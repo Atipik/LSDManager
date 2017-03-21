@@ -2090,7 +2090,7 @@ LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefini
 
     var getStandardIndexGetter = function(field) {
         return function(entity) {
-            return entity.get(field);
+            return entity.get(field) || entity.$oldValues[field];
         };
     };
 
