@@ -131,8 +131,8 @@ Entity.prototype.$reset = Entity.prototype._$reset = function() {
     this.$relationsCache = {};
 };
 
-Entity.prototype.$save = Entity.prototype._$save = function() {
-    return this.$repository.save(this);
+Entity.prototype.$save = Entity.prototype._$save = function(fireEvents) {
+    return this.$repository.save(this, fireEvents);
 };
 
 Entity.prototype.$saveInMemory = Entity.prototype._$saveInMemory = function() {
