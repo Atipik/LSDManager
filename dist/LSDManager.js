@@ -322,6 +322,14 @@
         );
     };
 
+    Repository.prototype.asyncFindBy = Repository.prototype._asyncFindBy = function(field, value, justOne) {
+        return new Promise(
+            resolve => {
+                resolve(this.findBy(field, value, justOne));
+            }
+        );
+    };
+
     Repository.prototype.findBy = Repository.prototype._findBy = function(field, value, justOne) {
         // ID
         if (field === 'id') {
@@ -386,10 +394,26 @@
         }
     };
 
+    Repository.prototype.asyncFindByCollection = Repository.prototype._asyncFindByCollection = function(field, collection) {
+        return this.asyncQuery(
+            function(entity) {
+                return collection.indexOf(entity[ field ]) !== -1;
+            }
+        );
+    };
+
     Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
         return this.query(
             function(entity) {
                 return collection.indexOf(entity[ field ]) !== -1;
+            }
+        );
+    };
+
+    Repository.prototype.asyncFindEntity = Repository.prototype._asyncFindEntity = function(id, entityName, useCache) {
+        new Promise(
+            resolve => {
+                resolve(this.findEntity(id, entityName, useCache));
             }
         );
     };
@@ -428,6 +452,18 @@
         }
 
         return this.$manager.getFromCache(entityName, id);
+    };
+
+    Repository.prototype.asyncFindOneBy = Repository.prototype._asyncFindOneBy = function(field, value) {
+        return this.asyncFindBy(field, value, true).then(
+            entities => {
+                if (entities.length > 0) {
+                    return entities[ 0 ];
+                }
+
+                return null;
+            }
+        );
     };
 
     Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(field, value) {
@@ -622,6 +658,14 @@
         return entities;
     };
 
+    Repository.prototype.asyncRemove = Repository.prototype._asyncRemove = function(data, fireEvents) {
+        return new Promise(
+            resolve => {
+                resolve(this.remove(data, fireEvents));
+            }
+        );
+    };
+
     Repository.prototype.remove = Repository.prototype._remove = function(data, fireEvents) {
         var entity, id;
 
@@ -700,6 +744,37 @@
     /**
      * Remove collection of objects | object identifiers
      */
+    Repository.prototype.asyncRemoveCollection = Repository.prototype._asyncRemoveCollection = function(collection, fireEvents) {
+        console.group('Remove collection');
+
+        var removes = [];
+
+        for (var i = 0; i < collection.length; i++) {
+            try {
+                var item = collection[ i ];
+
+                removes.push(
+                    this.asyncRemove(
+                        item,
+                        fireEvents
+                    )
+                );
+
+                if (collection.indexOf(item) === -1) {
+                    i--;
+                }
+            } catch (e) {
+            }
+        }
+
+        console.groupEnd();
+
+        return Promise.all(removes);
+    };
+
+    /**
+     * Remove collection of objects | object identifiers
+     */
     Repository.prototype.removeCollection = Repository.prototype._removeCollection = function(collection, fireEvents) {
         console.group('Remove collection');
 
@@ -708,7 +783,7 @@
                 var item = collection[ i ];
 
                 this.remove(
-                    collection[ i ],
+                    item,
                     fireEvents
                 );
 
@@ -782,6 +857,14 @@
         }
 
         return false;
+    };
+
+    Repository.prototype.asyncSave = Repository.prototype._asyncSave = function(entity, fireEvents) {
+        return new Promise(
+            resolve => {
+                resolve(this.save(entity, fireEvents));
+            }
+        );
     };
 
     Repository.prototype.save = Repository.prototype._save = function(entity, fireEvents) {
@@ -862,6 +945,26 @@
         console.log(this.$entityName + ' #' + entity.getId() + ' saved');
 
         return true;
+    };
+
+    Repository.prototype.asyncSaveCollection = Repository.prototype._asyncSaveCollection = function(collection, fireEvents) {
+        if (collection.length > 0) {
+            console.group('Save collection');
+
+            var saves = [];
+
+            for (var i = 0; i < collection.length; i++) {
+                if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
+                    saves.push(
+                        this.asyncSave(collection[ i ], fireEvents)
+                    );
+                }
+            }
+
+            console.groupEnd();
+        }
+
+        return Promise.all(saves);
     };
 
     Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {

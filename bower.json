@@ -4,7 +4,7 @@
   "homepage"    : "https://github.com/marmotz/LSDManager",
   "keywords"    : [ "localStorage", "ORM", "Data" ],
   "license"     : "MIT",
-  "main"        : "src/LSDManager.js",
+  "main"        : "dist/LSDManager.js",
   "name"        : "LSDManager",
-  "version"     : "0.30.2"
+  "version"     : "0.31.0"
 }
