@@ -1,12 +1,9 @@
-(function(window) {
-    'use strict';
-
-    var Repository = window.Repository = function(manager, entityName) {
+    var LSRepository = LSDManager.LocalStorageRepository = function(manager, entityName) {
         this.$manager    = manager;
         this.$entityName = entityName;
     };
 
-    Repository.prototype.addIndex = Repository.prototype._addIndex = function(indexName, value, id, indexStorage) {
+    LSRepository.prototype.addIndex = LSRepository.prototype._addIndex = function(indexName, value, id, indexStorage) {
         if (value === undefined || value === null) {
             return false;
         }
@@ -49,46 +46,15 @@
         return false;
     };
 
-    Repository.prototype.createEntity = Repository.prototype._createEntity = function(data, useCache) {
-        if (!data) {
-            data = {};
-        }
-
-        if (useCache === undefined) {
-            useCache = true;
-        }
-
-        var manager = this.$manager;
-
-        var entity = manager.extend(
-            new Entity(this),
-            manager.getEntity(this.$entityName)
+    LSRepository.prototype.createEntity = LSRepository.prototype._createEntity = function(data, useCache) {
+        return this.$manager.createEntity(
+            this.$entityName,
+            data,
+            useCache
         );
-
-        Object.defineProperties(
-            entity,
-            manager.$entityProperties[ this.$entityName ]
-        );
-
-        entity.__init__();
-
-        if (data.id === undefined && data._ === undefined) {
-            data.id = manager.getNewId();
-        }
-
-        entity = this.loadEntity(
-            entity,
-            data
-        );
-
-        if (useCache) {
-            manager.addToCache(entity);
-        }
-
-        return entity;
     };
 
-    Repository.prototype.createIndexesStorage = Repository.prototype._createIndexesStorage = function(indexNames) {
+    LSRepository.prototype.createIndexesStorage = LSRepository.prototype._createIndexesStorage = function(indexNames) {
         var entitiesId = this.getIndexStorage('id');
 
         var returnOne = false;
@@ -134,7 +100,7 @@
         }
     };
 
-    Repository.prototype.removeIndexesFromCache = Repository.prototype._removeIndexesFromCache = function() {
+    LSRepository.prototype.removeIndexesFromCache = LSRepository.prototype._removeIndexesFromCache = function() {
         var entityDefinition = this.getEntityDefinition();
 
         for (var indexName in entityDefinition.indexes) {
@@ -145,15 +111,7 @@
         }
     };
 
-    Repository.prototype.asyncFindAll = Repository.prototype._asyncFindAll = function() {
-        return this.asyncQuery(
-            function() {
-                return true;
-            }
-        );
-    };
-
-    Repository.prototype.findAll = Repository.prototype._findAll = function() {
+    LSRepository.prototype.findAll = LSRepository.prototype._findAll = function() {
         return this.query(
             function() {
                 return true;
@@ -161,15 +119,7 @@
         );
     };
 
-    Repository.prototype.asyncFindBy = Repository.prototype._asyncFindBy = function(field, value, justOne) {
-        return new Promise(
-            resolve => {
-                resolve(this.findBy(field, value, justOne));
-            }
-        );
-    };
-
-    Repository.prototype.findBy = Repository.prototype._findBy = function(field, value, justOne) {
+    LSRepository.prototype.findBy = LSRepository.prototype._findBy = function(field, value, justOne) {
         // ID
         if (field === 'id') {
             if (!value) {
@@ -233,15 +183,7 @@
         }
     };
 
-    Repository.prototype.asyncFindByCollection = Repository.prototype._asyncFindByCollection = function(field, collection) {
-        return this.asyncQuery(
-            function(entity) {
-                return collection.indexOf(entity[ field ]) !== -1;
-            }
-        );
-    };
-
-    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
+    LSRepository.prototype.findByCollection = LSRepository.prototype._findByCollection = function(field, collection) {
         return this.query(
             function(entity) {
                 return collection.indexOf(entity[ field ]) !== -1;
@@ -249,15 +191,7 @@
         );
     };
 
-    Repository.prototype.asyncFindEntity = Repository.prototype._asyncFindEntity = function(id, entityName, useCache) {
-        new Promise(
-            resolve => {
-                resolve(this.findEntity(id, entityName, useCache));
-            }
-        );
-    };
-
-    Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache) {
+    LSRepository.prototype.findEntity = LSRepository.prototype._findEntity = function(id, entityName, useCache) {
         if (!entityName) {
             entityName = this.$entityName;
         }
@@ -293,19 +227,7 @@
         return this.$manager.getFromCache(entityName, id);
     };
 
-    Repository.prototype.asyncFindOneBy = Repository.prototype._asyncFindOneBy = function(field, value) {
-        return this.asyncFindBy(field, value, true).then(
-            entities => {
-                if (entities.length > 0) {
-                    return entities[ 0 ];
-                }
-
-                return null;
-            }
-        );
-    };
-
-    Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(field, value) {
+    LSRepository.prototype.findOneBy = LSRepository.prototype._findOneBy = function(field, value) {
         var entities = this.findBy(field, value, true);
 
         if (entities.length > 0) {
@@ -315,11 +237,15 @@
         return null;
     };
 
-    Repository.prototype.getEntityDefinition = Repository.prototype._getEntityDefinition = function() {
+    LSRepository.prototype.getCurrentIds = LSRepository.prototype._getCurrentIds = function() {
+        return this.getIndexStorage('id');
+    };
+
+    LSRepository.prototype.getEntityDefinition = LSRepository.prototype._getEntityDefinition = function() {
         return this.$manager.getEntityDefinition(this.$entityName);
     };
 
-    Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStorageData = function(entity, useShortCut, removeNull) {
+    LSRepository.prototype.getEntityStorageData = LSRepository.prototype._getEntityStorageData = function(entity, useShortCut, removeNull) {
         var data = {}, field, storageMethod;
 
         if (useShortCut === undefined) {
@@ -351,7 +277,7 @@
         return data;
     };
 
-    Repository.prototype.getStorageKeyName = Repository.prototype._getStorageKeyName = function(entityName) {
+    LSRepository.prototype.getStorageKeyName = LSRepository.prototype._getStorageKeyName = function(entityName) {
         if (entityName === undefined) {
             entityName = this.$entityName;
         }
@@ -359,7 +285,7 @@
         return this.$manager.$useShortcut ? (this.$manager.getEntityDefinition(entityName).shortcut || entityName) : entityName;
     };
 
-    Repository.prototype.getIndexStorageKey = Repository.prototype._getIndexStorageKey = function(fieldName) {
+    LSRepository.prototype.getIndexStorageKey = LSRepository.prototype._getIndexStorageKey = function(fieldName) {
         return this.$manager.$storage.key(
             [
                 this.getStorageKeyName(),
@@ -370,7 +296,7 @@
         );
     };
 
-    Repository.prototype.getIndexStorage = Repository.prototype._getIndexStorage = function(indexName) {
+    LSRepository.prototype.getIndexStorage = LSRepository.prototype._getIndexStorage = function(indexName) {
         var entityName = this.$entityName;
         var cacheName  = this.$manager.$INDEX_PREFIX + indexName;
 
@@ -398,10 +324,10 @@
         return this.$manager.getFromCache(entityName, cacheName);
     };
 
-    Repository.prototype.__init__ = function() {
+    LSRepository.prototype.__init__ = function() {
     };
 
-    Repository.prototype.isValid = Repository.prototype._isValid = function(entity) {
+    LSRepository.prototype.isValid = LSRepository.prototype._isValid = function(entity) {
         var entityDefinition = this.getEntityDefinition();
 
         var fields = entityDefinition.fields;
@@ -440,41 +366,7 @@
         return true;
     };
 
-    Repository.prototype.loadEntity = Repository.prototype._loadEntity = function(entity, data) {
-        var field, methodStorage, methodSet;
-
-        var shortcuts = this.getEntityDefinition().shortcuts;
-
-        for (field in data) {
-            var value = data[ field ];
-
-            field = shortcuts[ field ] || field;
-
-            methodSet = this.$manager.getMethodName('set', field, 'FromStorage');
-
-            if (!entity[ methodSet ] || !this.$manager.checkType(entity[ methodSet ], 'function')) {
-                methodSet = this.$manager.getMethodName('set', field);
-
-                if (!entity[ methodSet ] || !this.$manager.checkType(entity[ methodSet ], 'function')) {
-                    continue;
-                }
-            }
-
-            entity[ methodSet ](value);
-        }
-
-        return entity;
-    };
-
-    Repository.prototype.asyncQuery = Repository.prototype._asyncQuery = function(filter) {
-        return new Promise(
-            resolve => {
-                resolve(this.query(filter));
-            }
-        );
-    };
-
-    Repository.prototype.query = Repository.prototype._query = function(filter) {
+    LSRepository.prototype.query = LSRepository.prototype._query = function(filter) {
         var entitiesId = this.getIndexStorage('id');
         var entities   = [];
 
@@ -497,15 +389,7 @@
         return entities;
     };
 
-    Repository.prototype.asyncRemove = Repository.prototype._asyncRemove = function(data, fireEvents) {
-        return new Promise(
-            resolve => {
-                resolve(this.remove(data, fireEvents));
-            }
-        );
-    };
-
-    Repository.prototype.remove = Repository.prototype._remove = function(data, fireEvents) {
+    LSRepository.prototype.remove = LSRepository.prototype._remove = function(data, fireEvents) {
         var entity, id;
 
         if (fireEvents === undefined) {
@@ -583,38 +467,7 @@
     /**
      * Remove collection of objects | object identifiers
      */
-    Repository.prototype.asyncRemoveCollection = Repository.prototype._asyncRemoveCollection = function(collection, fireEvents) {
-        console.group('Remove collection');
-
-        var removes = [];
-
-        for (var i = 0; i < collection.length; i++) {
-            try {
-                var item = collection[ i ];
-
-                removes.push(
-                    this.asyncRemove(
-                        item,
-                        fireEvents
-                    )
-                );
-
-                if (collection.indexOf(item) === -1) {
-                    i--;
-                }
-            } catch (e) {
-            }
-        }
-
-        console.groupEnd();
-
-        return Promise.all(removes);
-    };
-
-    /**
-     * Remove collection of objects | object identifiers
-     */
-    Repository.prototype.removeCollection = Repository.prototype._removeCollection = function(collection, fireEvents) {
+    LSRepository.prototype.removeCollection = LSRepository.prototype._removeCollection = function(collection, fireEvents) {
         console.group('Remove collection');
 
         for (var i = 0; i < collection.length; i++) {
@@ -638,7 +491,7 @@
         return this;
     };
 
-    Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
+    LSRepository.prototype.removeDeleted = LSRepository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
         if (previousIds.length > 0) {
             console.group('Remove deleted for entity "' + this.$entityName + '"');
 
@@ -666,7 +519,7 @@
         return this;
     };
 
-    Repository.prototype.removeIndex = Repository.prototype._removeIndex = function(fieldName, fieldValue, id) {
+    LSRepository.prototype.removeIndex = LSRepository.prototype._removeIndex = function(fieldName, fieldValue, id) {
         if (fieldValue === undefined || fieldValue === null) {
             return false;
         }
@@ -698,15 +551,7 @@
         return false;
     };
 
-    Repository.prototype.asyncSave = Repository.prototype._asyncSave = function(entity, fireEvents) {
-        return new Promise(
-            resolve => {
-                resolve(this.save(entity, fireEvents));
-            }
-        );
-    };
-
-    Repository.prototype.save = Repository.prototype._save = function(entity, fireEvents) {
+    LSRepository.prototype.save = LSRepository.prototype._save = function(entity, fireEvents) {
         var id = entity.getId();
 
         if (id === null) {
@@ -786,27 +631,7 @@
         return true;
     };
 
-    Repository.prototype.asyncSaveCollection = Repository.prototype._asyncSaveCollection = function(collection, fireEvents) {
-        if (collection.length > 0) {
-            console.group('Save collection');
-
-            var saves = [];
-
-            for (var i = 0; i < collection.length; i++) {
-                if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
-                    saves.push(
-                        this.asyncSave(collection[ i ], fireEvents)
-                    );
-                }
-            }
-
-            console.groupEnd();
-        }
-
-        return Promise.all(saves);
-    };
-
-    Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {
+    LSRepository.prototype.saveCollection = LSRepository.prototype._saveCollection = function(collection, fireEvents) {
         if (collection.length > 0) {
             console.group('Save collection');
 
@@ -822,7 +647,7 @@
         return this;
     };
 
-    Repository.prototype.saveInMemory = Repository.prototype._saveInMemory = function(entity) {
+    LSRepository.prototype.saveInMemory = LSRepository.prototype._saveInMemory = function(entity) {
         var manager = this.$manager;
 
         var originalEntityName = this.$entityName;
@@ -868,60 +693,7 @@
         manager.addToCache(entity);
     };
 
-    Repository.prototype.setDependencies = Repository.prototype._setDependencies = function(oldId, entity) {
-        var entityDefinition = this.getEntityDefinition();
-
-        for (var dependencyName in entityDefinition.dependencies) {
-            var repository = this.$manager.getRepository(dependencyName);
-
-            for (var field in entityDefinition.dependencies[ dependencyName ]) {
-                var dependency = entityDefinition.dependencies[ dependencyName ][ field ];
-
-                var entities = [];
-                if (dependency.type === 'one') {
-                    entities = repository.findBy(field, oldId);
-                } else if (dependency.type === 'many') {
-                    if (entityDefinition.fields[ field ]) {
-                        entities = repository.query(
-                            function(currentEntity) {
-                                return currentEntity.get(field).indexOf(oldId) !== -1;
-                            }
-                        );
-                    }
-                }
-
-                for (var i = 0; i < entities.length; i++) {
-                    console.log(
-                        'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
-                        ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
-                    );
-                    if (dependency.type === 'one') {
-                        entities[ i ].set(
-                            field,
-                            entity.getId()
-                        );
-                    } else if (dependency.type === 'many') {
-                        var data = entities[ i ].get(
-                            field
-                        );
-
-                        var index = data.indexOf(oldId);
-
-                        data[ index ] = entity.getId();
-
-                        entities[ i ].set(
-                            field,
-                            data
-                        );
-                    }
-                }
-
-                repository.saveCollection(entities);
-            }
-        }
-    };
-
-    Repository.prototype.setIndexStorage = Repository.prototype._setIndexStorage = function(fieldName, indexStorage) {
+    LSRepository.prototype.setIndexStorage = LSRepository.prototype._setIndexStorage = function(fieldName, indexStorage) {
         this.$manager.$storage.set(
             this.getIndexStorageKey(fieldName),
             indexStorage
@@ -933,4 +705,3 @@
             indexStorage
         );
     };
-}(window));

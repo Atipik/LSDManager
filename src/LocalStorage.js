@@ -1,6 +1,3 @@
-(function(window) {
-    'use strict';
-
     var LocalStorage = window.LocalStorage = function(prefix) {
         if (prefix) {
             this.$prefix = prefix;
@@ -97,4 +94,3 @@
 
         return this;
     };
-}(window));

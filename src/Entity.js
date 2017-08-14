@@ -1,7 +1,4 @@
-(function(window) {
-    'use strict';
-
-    var Entity = window.Entity = function(repository) {
+    var Entity = LSDManager.Entity = function(repository) {
         this.$repository     = repository;
         this.$manager        = repository.$manager;
         this.$oldValues      = {};
@@ -111,7 +108,7 @@
     };
 
     Entity.prototype.$load = Entity.prototype._$load = function(data) {
-        return this.$repository.loadEntity(this, data);
+        return this.$manager.loadEntity(this, data);
     };
 
     Entity.prototype.$remove = Entity.prototype._$remove = function(fireEvents) {
@@ -158,4 +155,3 @@
             this.$repository.getEntityStorageData(this, !!useShortCut, false)
         );
     };
-}(window));

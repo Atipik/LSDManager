@@ -1,7 +1,5 @@
-(function(window) {
-    'use strict';
-
     var LSDManager = window.LSDManager = function(injectStorage) {
+        this.$databaseName      = 'LSDManager';
         this.$databaseVersion   = null;
         this.$lastId            = 0;
         this.$entity            = {};
@@ -29,7 +27,12 @@
         this.__init__();
     };
 
-    LSDManager.$migrations = [];
+    LSDManager.$migrations       = [];
+    LSDManager.$indexedDbSchemas = {};
+
+    LSDManager.addIndexedDbSchema = LSDManager._addIndexedDbSchema = function(version, schema) {
+        LSDManager.$indexedDbSchemas[version] = schema;
+    };
 
     LSDManager.addMigration = LSDManager._addMigration = function(migration) {
         LSDManager.$migrations.push(migration);
@@ -65,6 +68,45 @@
             object instanceof Array ? [] : {},
             object
         );
+    };
+
+    LSDManager.prototype.createEntity = LSDManager.prototype._createEntity = function(entityName, data, useCache) {
+        if (!data) {
+            data = {};
+        }
+
+        if (useCache === undefined) {
+            useCache = true;
+        }
+
+        var repository = this.getRepository(entityName);
+
+        var entity = this.extend(
+            new Entity(repository),
+            this.getEntity(entityName)
+        );
+
+        Object.defineProperties(
+            entity,
+            this.$entityProperties[ entityName ]
+        );
+
+        entity.__init__();
+
+        if (data.id === undefined && data._ === undefined) {
+            data.id = this.getNewId();
+        }
+
+        entity = this.loadEntity(
+            entity,
+            data
+        );
+
+        if (useCache) {
+            this.addToCache(entity);
+        }
+
+        return entity;
     };
 
     LSDManager.prototype.deleteCollectionFromCache = LSDManager.prototype._deleteCollectionFromCache = function(collection) {
@@ -277,6 +319,10 @@
 
     LSDManager.prototype.getCurrentDatabaseVersion = LSDManager.prototype._getCurrentDatabaseVersion = function() {
         return parseInt(this.$storage.get('version') || 0, 10);
+    };
+
+    LSDManager.prototype.getDatabaseName = LSDManager.prototype._getCurrentDatabaseName = function() {
+        return this.$databaseName;
     };
 
     LSDManager.prototype.getDatabaseVersion = LSDManager.prototype._getCurrentDatabaseVersion = function() {
@@ -712,8 +758,10 @@
             throw new Error('Unknown repository for ' + entityName);
         } else {
             if (!this.$repositories[ entityName ]) {
+                var driver = this.getEntityDefinition(entityName).driver;
+
                 this.$repositories[ entityName ] = this.extend(
-                    new Repository(this, entityName),
+                    new LSDManager[driver + 'Repository'](this, entityName),
                     this.getRepositoryClass(entityName)
                 );
 
@@ -790,16 +838,62 @@
         return false;
     };
 
+    LSDManager.prototype.loadEntity = LSDManager.prototype._loadEntity = function(entity, data) {
+        var shortcuts = this.getEntityDefinition(entity.$repository.$entityName).shortcuts || {};
+
+        for (var field in data) {
+            var value = data[ field ];
+
+            field = shortcuts[ field ] || field;
+
+            var methodSet = this.getMethodName('set', field, 'FromStorage');
+
+            if (!entity[ methodSet ] || !this.checkType(entity[ methodSet ], 'function')) {
+                methodSet = this.getMethodName('set', field);
+
+                if (!entity[ methodSet ] || !this.checkType(entity[ methodSet ], 'function')) {
+                    continue;
+                }
+            }
+
+            entity[ methodSet ](value);
+        }
+
+        entity.$oldId     = entity.id;
+        entity.$oldValues = this.clone(entity.$values);
+
+        return entity;
+    };
+
     LSDManager.prototype.migrate = LSDManager.prototype._migrate = function() {
         var start = new Date().getTime();
 
+        var p = new Promise(
+            function(resolve) {
+                resolve();
+            }
+        );
+
+
         for (var i = 0; i < LSDManager.$migrations.length; i++) {
-            LSDManager.$migrations[ i ](this);
+            p.then(
+                function(previous) {
+                    LSDManager.$migrations[ i ](this);
+                }
+            );
         }
 
-        this.storeDatabaseVersion();
+        var self = this;
 
-        console.log('Migration done in ' + (new Date().getTime() - start) + 'ms');
+        return p
+            .then(
+                function() {
+                    self.storeDatabaseVersion();
+
+                    console.log('Migration done in ' + (new Date().getTime() - start) + 'ms');
+                }
+            )
+        ;
     };
 
     LSDManager.prototype.needMigration = LSDManager.prototype._needMigration = function() {
@@ -814,6 +908,33 @@
         }
 
         throw new Error('Incoherent version. Must be in version "' + this.$databaseVersion + '" but "' + currentVersion + '" found.');
+    };
+
+    LSDManager.prototype.getIndexedDb = LSDManager.prototype._getIndexedDb = function() {
+        if (!this.$database) {
+            this.$database = new Dexie(
+                this.getDatabaseName(),
+                this.getDatabaseVersion()
+            );
+
+            for (var version in LSDManager.$indexedDbSchemas) {
+                this.$database.version(version).stores(
+                    LSDManager.$indexedDbSchemas[version]
+                );
+            }
+        }
+
+        return this.$database;
+    };
+
+    LSDManager.prototype.openIndexedDb = LSDManager.prototype._openIndexedDb = function() {
+        var db = this.getIndexedDb();
+
+        if (!db.isOpen()) {
+            db.open();
+        }
+
+        return db;
     };
 
     LSDManager.prototype.registerEvent = LSDManager.prototype._registerEvent = function(eventName, callback) {
@@ -929,6 +1050,12 @@
         }
     };
 
+    LSDManager.prototype.setDatabaseName = LSDManager.prototype._setDatabaseName = function(name) {
+        this.$databaseName = name;
+
+        return this;
+    };
+
     LSDManager.prototype.setDatabaseVersion = LSDManager.prototype._setDatabaseVersion = function(version) {
         this.$databaseVersion = parseInt(version, 10);
 
@@ -939,6 +1066,72 @@
         this.$storage.$prefix = prefix;
 
         return this;
+    };
+
+    LSDManager.prototype.setDependencies = LSDManager.prototype._setDependencies = function(oldId, entity) {
+        var entityDefinition = this.getEntityDefinition(entity.$entityName);
+
+        return promiseForEach(
+            entityDefinition.dependencies,
+            function(dependencies, dependencyName) {
+                var repository = this.getRepository(dependencyName);
+
+                return promiseForEach(
+                    dependencies,
+                    function(dependency, field) {
+                        var chain;
+
+                        if (dependency.type === 'one') {
+                            chain = toPromise(repository.findBy(field, oldId));
+                        } else if (dependency.type === 'many') {
+                            if (entityDefinition.fields[ field ]) {
+                                chain = toPromise(
+                                    repository.query(
+                                        function(currentEntity) {
+                                            return currentEntity.get(field).indexOf(oldId) !== -1;
+                                        }
+                                    )
+                                );
+                            }
+                        }
+
+                        if (!chain) {
+                            return;
+                        }
+
+                        return chain.then(function(entities) {
+                            for (var i = 0; i < entities.length; i++) {
+                                console.log(
+                                    'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
+                                    ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
+                                );
+                                if (dependency.type === 'one') {
+                                    entities[ i ].set(
+                                        field,
+                                        entity.getId()
+                                    );
+                                } else if (dependency.type === 'many') {
+                                    var data = entities[ i ].get(
+                                        field
+                                    );
+
+                                    var index = data.indexOf(oldId);
+
+                                    data[ index ] = entity.getId();
+
+                                    entities[ i ].set(
+                                        field,
+                                        data
+                                    );
+                                }
+                            }
+
+                            return repository.saveCollection(entities);
+                        });
+                    }
+                );
+            }
+        );
     };
 
     LSDManager.prototype.setEntity = LSDManager.prototype._setEntity = function(entityName, compiledEntityClass) {
@@ -956,6 +1149,10 @@
     };
 
     LSDManager.prototype.setEntityDefinition = LSDManager.prototype._setEntityDefinition = function(entityName, entityDefinition) {
+        if (entityDefinition.driver === undefined) {
+            entityDefinition.driver = 'LocalStorage';
+        }
+
         if (entityDefinition.fields === undefined) {
             entityDefinition.fields = {};
         }
@@ -1102,4 +1299,3 @@
     LSDManager.prototype.useShortcuts = LSDManager.prototype._useShortcuts = function(useShortcut) {
         this.$useShortcut = !!useShortcut;
     };
-}(window));

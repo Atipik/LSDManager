@@ -2,9 +2,9 @@
   "authors"     : [ "Renaud LITTOLFF <rlittolff@gmail.com>" ],
   "description" : "Local Storage Data Manager",
   "homepage"    : "https://github.com/marmotz/LSDManager",
-  "keywords"    : [ "localStorage", "ORM", "Data" ],
+  "keywords"    : [ "localStorage", "indexedDB", "local", "ORM", "Data" ],
   "license"     : "MIT",
   "main"        : "dist/LSDManager.js",
   "name"        : "LSDManager",
-  "version"     : "0.32.0"
+  "version"     : "0.34.0-beta.1"
 }
