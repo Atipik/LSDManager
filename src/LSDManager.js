@@ -258,7 +258,12 @@
                             value = new Date(value);
                         }
 
-                        value.setHours(0, 0, 0, 0);
+                        // current date is an invalid date
+                        if (isNaN(value.getTime())) {
+                            value = null;
+                        } else {
+                            value.setHours(0, 0, 0, 0);
+                        }
                     }
                     break;
 
