@@ -1028,11 +1028,11 @@
         };
 
         for (var field in entityDefinition.fields) {
-            if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index === true) {
+            if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index !== undefined) {
                 entityDefinition.indexes[ field ] = {
                     shortcut      : entityDefinition.fields[ field ].shortcut || field,
                     getIndex      : getStandardIndexGetter(field),
-                    transformIndex: getStandardIndexTransformer()
+                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer()
                 };
             }
         }
