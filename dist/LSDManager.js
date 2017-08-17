@@ -43,22 +43,22 @@
             return true;
         }
 
-        if (Object.keys(this.$oldValues).length !== Object.keys(this.$values).length) {
-            return true;
-        }
+        var fields = this.$repository.getEntityDefinition().fields;
 
-        for (var key in this.$oldValues) {
-            if (this.$values[ key ] === undefined
-                || this.$manager.getType(this.$oldValues[ key ]) !== this.$manager.getType(this.$values[ key ])) {
+        for (var field in fields) {
+            var oldValue = this.$oldValues[field] === undefined ? null : this.$oldValues[field];
+            var value    = this.$values[field]    === undefined ? null : this.$values[field];
+
+            if (this.$manager.getType(oldValue) !== this.$manager.getType(value)) {
                 return true;
             }
 
-            if (this.$manager.checkType(this.$oldValues[ key ], 'object')) {
-                if (JSON.stringify(this.$oldValues[ key ]) !== JSON.stringify(this.$values[ key ])) {
+            if (this.$manager.checkType(oldValue, 'object')) {
+                if (JSON.stringify(oldValue) !== JSON.stringify(value)) {
                     return true;
                 }
             } else {
-                if (this.$oldValues[ key ] !== this.$values[ key ]) {
+                if (oldValue !== value) {
                     return true;
                 }
             }
@@ -1455,7 +1455,12 @@
                             value = new Date(value);
                         }
 
-                        value.setHours(0, 0, 0, 0);
+                        // current date is an invalid date
+                        if (isNaN(value.getTime())) {
+                            value = null;
+                        } else {
+                            value.setHours(0, 0, 0, 0);
+                        }
                     }
                     break;
 
@@ -2225,11 +2230,11 @@
         };
 
         for (var field in entityDefinition.fields) {
-            if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index === true) {
+            if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index !== undefined) {
                 entityDefinition.indexes[ field ] = {
                     shortcut      : entityDefinition.fields[ field ].shortcut || field,
                     getIndex      : getStandardIndexGetter(field),
-                    transformIndex: getStandardIndexTransformer()
+                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer()
                 };
             }
         }
