@@ -46,11 +46,12 @@
         return false;
     };
 
-    LSRepository.prototype.createEntity = LSRepository.prototype._createEntity = function(data, useCache) {
+    LSRepository.prototype.createEntity = LSRepository.prototype._createEntity = function(data, useCache, setOldData) {
         return this.$manager.createEntity(
             this.$entityName,
             data,
-            useCache
+            useCache,
+            setOldData
         );
     };
 
@@ -211,11 +212,9 @@
 
             var entity = this.createEntity(
                 this.$manager.$storage.get(entityKey),
-                useCache
+                useCache,
+                true
             );
-
-            entity.$oldId     = entity.id;
-            entity.$oldValues = this.$manager.clone(entity.$values);
 
             if (useCache) {
                 this.$manager.addToCache(entity);

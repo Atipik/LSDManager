@@ -63,6 +63,11 @@
         return this.getType(variable) === type;
     };
 
+    LSDManager.prototype.clearDatabase = LSDManager.prototype._clearDatabase = function() {
+        this.$storage.clear();
+        this.openIndexedDb().delete();
+    };
+
     LSDManager.prototype.clone = LSDManager.prototype._clone = function(object) {
         return this.extend(
             object instanceof Array ? [] : {},
@@ -70,7 +75,7 @@
         );
     };
 
-    LSDManager.prototype.createEntity = LSDManager.prototype._createEntity = function(entityName, data, useCache) {
+    LSDManager.prototype.createEntity = LSDManager.prototype._createEntity = function(entityName, data, useCache, setOldData) {
         if (!data) {
             data = {};
         }
@@ -78,6 +83,8 @@
         if (useCache === undefined) {
             useCache = true;
         }
+
+        setOldData = !!setOldData;
 
         var repository = this.getRepository(entityName);
 
@@ -101,6 +108,11 @@
             entity,
             data
         );
+
+        if (setOldData) {
+            entity.$oldId     = entity.id;
+            entity.$oldValues = this.clone(entity.$values);
+        }
 
         if (useCache) {
             this.addToCache(entity);

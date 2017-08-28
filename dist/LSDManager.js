@@ -101,6 +101,11 @@
         return this.getType(variable) === type;
     };
 
+    LSDManager.prototype.clearDatabase = LSDManager.prototype._clearDatabase = function() {
+        this.$storage.clear();
+        this.openIndexedDb().delete();
+    };
+
     LSDManager.prototype.clone = LSDManager.prototype._clone = function(object) {
         return this.extend(
             object instanceof Array ? [] : {},
@@ -108,7 +113,7 @@
         );
     };
 
-    LSDManager.prototype.createEntity = LSDManager.prototype._createEntity = function(entityName, data, useCache) {
+    LSDManager.prototype.createEntity = LSDManager.prototype._createEntity = function(entityName, data, useCache, setOldData) {
         if (!data) {
             data = {};
         }
@@ -116,6 +121,8 @@
         if (useCache === undefined) {
             useCache = true;
         }
+
+        setOldData = !!setOldData;
 
         var repository = this.getRepository(entityName);
 
@@ -139,6 +146,11 @@
             entity,
             data
         );
+
+        if (setOldData) {
+            entity.$oldId     = entity.id;
+            entity.$oldValues = this.clone(entity.$values);
+        }
 
         if (useCache) {
             this.addToCache(entity);
@@ -1388,6 +1400,10 @@
         );
     };
 
+    LocalStorage.prototype.clear = function(key, defaultValue) {
+        localStorage.clear();
+    };
+
     LocalStorage.prototype.get = function(key, defaultValue) {
         var value = localStorage.getItem(
             this.key(
@@ -1486,11 +1502,12 @@
         return false;
     };
 
-    LSRepository.prototype.createEntity = LSRepository.prototype._createEntity = function(data, useCache) {
+    LSRepository.prototype.createEntity = LSRepository.prototype._createEntity = function(data, useCache, setOldData) {
         return this.$manager.createEntity(
             this.$entityName,
             data,
-            useCache
+            useCache,
+            setOldData
         );
     };
 
@@ -1651,11 +1668,9 @@
 
             var entity = this.createEntity(
                 this.$manager.$storage.get(entityKey),
-                useCache
+                useCache,
+                true
             );
-
-            entity.$oldId     = entity.id;
-            entity.$oldValues = this.$manager.clone(entity.$values);
 
             if (useCache) {
                 this.$manager.addToCache(entity);
@@ -2164,7 +2179,11 @@
         return collection.each(
             function(data) {
                 entities.push(
-                    self.createEntity(data)
+                    self.createEntity(
+                        data,
+                        undefined,
+                        true
+                    )
                 );
             }
         ).then(function() {
@@ -2172,11 +2191,12 @@
         });
     };
 
-    IDBRepository.prototype.createEntity = IDBRepository.prototype._createEntity = function(data, useCache) {
+    IDBRepository.prototype.createEntity = IDBRepository.prototype._createEntity = function(data, useCache, setOldData) {
         return this.$manager.createEntity(
             this.$entityName,
             data,
-            useCache
+            useCache,
+            setOldData
         );
     };
 
@@ -2232,11 +2252,9 @@
 
                     var entity = this.createEntity(
                         this.$manager.$storage.get(entityKey),
-                        useCache
+                        useCache,
+                        true
                     );
-
-                    entity.$oldId     = entity.id;
-                    entity.$oldValues = this.$manager.clone(entity.$values);
 
                     if (useCache) {
                         this.$manager.addToCache(entity);

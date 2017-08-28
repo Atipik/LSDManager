@@ -48,6 +48,10 @@
         );
     };
 
+    LocalStorage.prototype.clear = function(key, defaultValue) {
+        localStorage.clear();
+    };
+
     LocalStorage.prototype.get = function(key, defaultValue) {
         var value = localStorage.getItem(
             this.key(
