@@ -859,9 +859,6 @@
             entity[ methodSet ](value);
         }
 
-        entity.$oldId     = entity.id;
-        entity.$oldValues = this.clone(entity.$values);
-
         return entity;
     };
 
