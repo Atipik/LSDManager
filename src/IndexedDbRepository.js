@@ -41,7 +41,10 @@
     };
 
     IDBRepository.prototype.findBy = IDBRepository.prototype._findBy = function(field, value, justOne) {
-        return this.query({ [field]: value }).then(
+        var query = {};
+        query[field] = value;
+
+        return this.query(query).then(
             function(entities) {
                 if (justOne) {
                     if (entities.length > 0) {
@@ -154,9 +157,23 @@
         return data;
     };
 
+    IDBRepository.prototype.getIndexValues = IDBRepository.prototype._getIndexValues = function(indexName) {
+        var indexValues = {};
+
+        return this.getTable().each(function(data) {
+            if (data[indexName] === undefined) {
+                throw new Error(indexName + " n'est pas ")
+            }
+
+            indexValues[data[indexName]] = true;
+        }).then(function() {
+            return Object.keys(indexValues);
+        });
+    };
+
     IDBRepository.prototype.getTable = IDBRepository.prototype._getTable = function() {
         return this.$db[this.$entityName];
-    }
+    };
 
     IDBRepository.prototype.__init__ = function() {
     };
