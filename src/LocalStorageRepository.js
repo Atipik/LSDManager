@@ -689,6 +689,9 @@
             }
         }
 
+        entity.$oldId     = id;
+        entity.$oldValues = manager.clone(entity.$values);
+
         manager.addToCache(entity);
     };
 
