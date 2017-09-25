@@ -446,8 +446,9 @@
             for (field in this.getEntityDefinition(entityName).fields) {
                 if (this.getEntityDefinition(entityName).fields.hasOwnProperty(field)) {
                     properties[ field ] = {
-                        get: getPropertyGetter(field),
-                        set: getPropertySetter(field)
+                        get       : getPropertyGetter(field),
+                        set       : getPropertySetter(field),
+                        enumerable: true
                     };
 
                     method = this.getMethodName('get', field);
