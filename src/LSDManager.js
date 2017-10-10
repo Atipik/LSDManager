@@ -31,7 +31,7 @@
     LSDManager.$indexedDbSchemas = {};
 
     LSDManager.addIndexedDbSchema = LSDManager._addIndexedDbSchema = function(version, schema) {
-        LSDManager.$indexedDbSchemas[version] = schema;
+        LSDManager.$indexedDbSchemas[parseInt(version)] = schema;
     };
 
     LSDManager.addMigration = LSDManager._addMigration = function(migration) {
@@ -928,6 +928,8 @@
             );
 
             for (var version in LSDManager.$indexedDbSchemas) {
+                version = parseInt(version);
+
                 this.$database.version(version).stores(
                     LSDManager.$indexedDbSchemas[version]
                 );
