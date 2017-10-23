@@ -775,6 +775,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
+        this.$manager.resetRelationsCache(entity);
 
         if (fireEvents) {
             this.$manager.fireEvents('afterSave', entity);

@@ -936,6 +936,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
+        this.$manager.resetRelationsCache(entity);
 
         if (fireEvents) {
             this.$manager.fireEvents('afterSave', entity);
@@ -2119,7 +2120,7 @@
                             if (relationValue === entity) {
                                 var setterMethod = this.getMethodName('set', this.getRelationName(relation));
 
-                                cachedEntity[ setterMethod ](null);
+                                cachedEntity[ setterMethod ](undefined);
                             }
                         } else {
                             var indexOf = relationValue.indexOf(entity);

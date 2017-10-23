@@ -919,7 +919,7 @@
                             if (relationValue === entity) {
                                 var setterMethod = this.getMethodName('set', this.getRelationName(relation));
 
-                                cachedEntity[ setterMethod ](null);
+                                cachedEntity[ setterMethod ](undefined);
                             }
                         } else {
                             var indexOf = relationValue.indexOf(entity);
