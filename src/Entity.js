@@ -50,7 +50,7 @@
                 return true;
             }
 
-            if (this.$manager.checkType(oldValue, 'object')) {
+            if (this.$manager.checkTypes(oldValue, [ 'object', 'array' ])) {
                 if (JSON.stringify(oldValue) !== JSON.stringify(value)) {
                     return true;
                 }

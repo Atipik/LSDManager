@@ -101,6 +101,16 @@
         return this.getType(variable) === type;
     };
 
+    LSDManager.prototype.checkTypes = LSDManager.prototype._checkTypes = function(variable, types) {
+        for (var i = 0; i < types.length; i++) {
+            if (this.checkType(variable, types[ i ])) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     LSDManager.prototype.clearDatabase = LSDManager.prototype._clearDatabase = function() {
         this.$storage.clear();
         this.openIndexedDb().delete();
@@ -1085,7 +1095,7 @@
                             if (relationValue === entity) {
                                 var setterMethod = this.getMethodName('set', this.getRelationName(relation));
 
-                                cachedEntity[ setterMethod ](null);
+                                cachedEntity[ setterMethod ](undefined);
                             }
                         } else {
                             var indexOf = relationValue.indexOf(entity);
@@ -2078,6 +2088,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
+        this.$manager.resetRelationsCache(entity);
 
         if (fireEvents) {
             this.$manager.fireEvents('afterSave', entity);
@@ -2569,6 +2580,7 @@
                 entity.$oldValues = self.$manager.clone(entity.$values);
 
                 self.$manager.addToCache(entity);
+                self.$manager.resetRelationsCache(entity);
 
                 if (fireEvents) {
                     self.$manager.fireEvents('afterSave', entity);
@@ -2707,7 +2719,7 @@
                 return true;
             }
 
-            if (this.$manager.checkType(oldValue, 'object')) {
+            if (this.$manager.checkTypes(oldValue, [ 'object', 'array' ])) {
                 if (JSON.stringify(oldValue) !== JSON.stringify(value)) {
                     return true;
                 }

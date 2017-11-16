@@ -63,6 +63,16 @@
         return this.getType(variable) === type;
     };
 
+    LSDManager.prototype.checkTypes = LSDManager.prototype._checkTypes = function(variable, types) {
+        for (var i = 0; i < types.length; i++) {
+            if (this.checkType(variable, types[ i ])) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     LSDManager.prototype.clearDatabase = LSDManager.prototype._clearDatabase = function() {
         this.$storage.clear();
         this.openIndexedDb().delete();
