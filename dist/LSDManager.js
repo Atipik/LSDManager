@@ -2088,7 +2088,9 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
-        this.$manager.resetRelationsCache(entity);
+        if (this.$manager.$useIndex) {
+            this.$manager.resetRelationsCache(entity);
+        }
 
         if (fireEvents) {
             this.$manager.fireEvents('afterSave', entity);
@@ -2580,7 +2582,9 @@
                 entity.$oldValues = self.$manager.clone(entity.$values);
 
                 self.$manager.addToCache(entity);
-                self.$manager.resetRelationsCache(entity);
+                if (self.$manager.$useIndex) {
+                    self.$manager.resetRelationsCache(entity);
+                }
 
                 if (fireEvents) {
                     self.$manager.fireEvents('afterSave', entity);
