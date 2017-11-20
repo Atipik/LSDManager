@@ -407,7 +407,7 @@
             if (!id) {
                 console.log('Nothing to delete');
 
-                return;
+                return this;
             }
 
             entity = this.findEntity(id, null, false);
@@ -419,7 +419,7 @@
             this.$manager.deleteFromCache(entity);
             this.$manager.resetRelationsCache(entity);
 
-            return;
+            return this;
         }
 
         console.group('Deleting ' + this.$entityName + ' #' + id);
