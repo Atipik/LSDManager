@@ -1091,7 +1091,7 @@
     };
 
     LSDManager.prototype.setDependencies = LSDManager.prototype._setDependencies = function(oldId, entity) {
-        var entityDefinition = this.getEntityDefinition(entity.$entityName);
+        var entityDefinition = this.getEntityDefinition(entity.$repository.$entityName);
 
         return promiseForEach(
             entityDefinition.dependencies,
