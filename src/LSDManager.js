@@ -1093,10 +1093,12 @@
     LSDManager.prototype.setDependencies = LSDManager.prototype._setDependencies = function(oldId, entity) {
         var entityDefinition = this.getEntityDefinition(entity.$repository.$entityName);
 
+        var self = this;
+
         return promiseForEach(
             entityDefinition.dependencies,
             function(dependencies, dependencyName) {
-                var repository = this.getRepository(dependencyName);
+                var repository = self.getRepository(dependencyName);
 
                 return promiseForEach(
                     dependencies,
@@ -1118,7 +1120,7 @@
                         }
 
                         if (!chain) {
-                            return;
+                            return Promise.resolve();
                         }
 
                         return chain.then(function(entities) {
@@ -1127,6 +1129,7 @@
                                     'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
                                     ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
                                 );
+
                                 if (dependency.type === 'one') {
                                     entities[ i ].set(
                                         field,
@@ -1148,7 +1151,7 @@
                                 }
                             }
 
-                            return repository.saveCollection(entities);
+                            return toPromise(repository.saveCollection(entities));
                         });
                     }
                 );
