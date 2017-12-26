@@ -422,7 +422,7 @@
             return this;
         }
 
-        console.group('Deleting ' + this.$entityName + ' #' + id);
+        console.log('Deleting ' + this.$entityName + ' #' + id);
 
         if (this.removeIndex('id', id)) {
             // console.log(entity);
@@ -458,8 +458,6 @@
             console.log('Nothing to delete');
         }
 
-        console.groupEnd();
-
         return this;
     };
 
@@ -467,7 +465,7 @@
      * Remove collection of objects | object identifiers
      */
     LSRepository.prototype.removeCollection = LSRepository.prototype._removeCollection = function(collection, fireEvents) {
-        console.group('Remove collection');
+        console.log('Remove collection');
 
         for (var i = 0; i < collection.length; i++) {
             try {
@@ -485,14 +483,12 @@
             }
         }
 
-        console.groupEnd();
-
         return this;
     };
 
     LSRepository.prototype.removeDeleted = LSRepository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
         if (previousIds.length > 0) {
-            console.group('Remove deleted for entity "' + this.$entityName + '"');
+            console.log('Remove deleted for entity "' + this.$entityName + '"');
 
             previousIds = this.$manager.clone(previousIds);
 
@@ -511,8 +507,6 @@
             } else {
                 console.log('Nothing to delete');
             }
-
-            console.groupEnd();
         }
 
         return this;
@@ -569,7 +563,7 @@
             return false;
         }
 
-        console.group('Saving ' + this.$entityName + ' #' + id);
+        console.log('Saving ' + this.$entityName + ' #' + id);
         // console.log(entity);
 
         var changingId = id !== entity.$oldId && entity.$oldId !== null;
@@ -627,7 +621,6 @@
             this.$manager.fireEvents('afterSave', entity);
         }
 
-        console.groupEnd();
         console.log(this.$entityName + ' #' + entity.getId() + ' saved');
 
         return true;
@@ -635,15 +628,13 @@
 
     LSRepository.prototype.saveCollection = LSRepository.prototype._saveCollection = function(collection, fireEvents) {
         if (collection.length > 0) {
-            console.group('Save collection');
+            console.log('Save collection');
 
             for (var i = 0; i < collection.length; i++) {
                 if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
                     this.save(collection[ i ], fireEvents);
                 }
             }
-
-            console.groupEnd();
         }
 
         return this;

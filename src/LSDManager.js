@@ -219,13 +219,11 @@
 
     LSDManager.prototype.fireEvents = LSDManager.prototype._fireEvents = function(eventName, entity) {
         if (this.$events[ eventName ] !== undefined) {
-            console.group(Object.keys(this.$events[ eventName ]).length + ' callback(s) for event ' + eventName);
+            console.log(Object.keys(this.$events[ eventName ]).length + ' callback(s) for event ' + eventName);
 
             for (var i in this.$events[ eventName ]) {
                 this.$events[ eventName ][ i ](entity);
             }
-
-            console.groupEnd();
         }
 
         return this;
@@ -970,7 +968,7 @@
     };
 
     LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = function() {
-        console.groupCollapsed('Reindex database');
+        console.log('Reindex database');
 
         for (var entityName in this.$entityDefinitions) {
             var indexFields = Object.keys(
@@ -992,7 +990,6 @@
         }
 
         console.log('Reindexation finished');
-        console.groupEnd();
     };
 
     LSDManager.prototype.removeCollection = LSDManager.prototype._removeCollection = function(collection, fireEvents) {

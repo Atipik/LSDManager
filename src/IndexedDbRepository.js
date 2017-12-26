@@ -80,29 +80,31 @@
             useCache = true;
         }
 
-        if (!useCache || !this.$manager.hasInCache(entityName, id)) {
-            this.$db[entityName].get(id).then(
-                function(entity) {
-                    if (entity === undefined) {
+        var repository = this;
+
+        if (!useCache || !repository.$manager.hasInCache(entityName, id)) {
+            return repository.$db[entityName].get(id).then(
+                function(data) {
+                    if (data === undefined) {
                         throw new Error('Unknown entity ' + entityName + ' with storage key ' + entityKey);
                     }
 
-                    var entity = this.createEntity(
-                        this.$manager.$storage.get(entityKey),
+                    var entity = repository.createEntity(
+                        data,
                         useCache,
                         true
                     );
 
                     if (useCache) {
-                        this.$manager.addToCache(entity);
+                        repository.$manager.addToCache(entity);
                     }
 
                     return entity;
                 }
             )
+        } else {
+            return repository.$manager.getFromCache(entityName, id);
         }
-
-        return this.$manager.getFromCache(entityName, id);
     };
 
     IDBRepository.prototype.findOneBy = IDBRepository.prototype._findOneBy = function(field, value) {
@@ -231,7 +233,9 @@
     };
 
     IDBRepository.prototype.remove = IDBRepository.prototype._remove = function(data, fireEvents) {
-        var entity, id;
+        var entity, promise;
+
+        var repository = this;
 
         if (fireEvents === undefined) {
             fireEvents = true;
@@ -241,10 +245,10 @@
         console.log(data);
 
         if (data instanceof Entity) {
-            entity = data;
-            id     = entity.getId();
+            entity  = data;
+            promise = Promise.resolve(entity);
         } else {
-            id = this.$manager.extractIdFromData(data);
+            var id = repository.$manager.extractIdFromData(data);
 
             if (!id) {
                 console.log('Nothing to delete');
@@ -252,46 +256,43 @@
                 return;
             }
 
-            entity = this.findEntity(id, null, false);
+            promise = repository.findEntity(id, null, false);
         }
 
-        if (entity.$isNew()) {
-            console.log('It was a new entity. Nothing to delete');
+        return promise.then(function(entity) {
+            if (entity.$isNew()) {
+                console.log('It was a new entity. Nothing to delete');
 
-            this.$manager.deleteFromCache(entity);
-            this.$manager.resetRelationsCache(entity);
+                repository.$manager.deleteFromCache(entity);
+                repository.$manager.resetRelationsCache(entity);
 
-            return;
-        }
+                return;
+            }
 
-        console.group('Deleting ' + this.$entityName + ' #' + id);
+            console.log('Deleting ' + repository.$entityName + ' #' + entity.id);
 
-        var self = this;
-
-        return this.getTable().delete(id)
-            .then(
+            return repository.getTable().delete(entity.id).then(
                 function() {
-                    self.$manager.deleteFromCache(self.$entityName, id);
-                    self.$manager.resetRelationsCache(entity);
-
+                    repository.$manager.deleteFromCache(repository.$entityName, entity.id);
+                    repository.$manager.resetRelationsCache(entity);
 
                     if (fireEvents) {
-                        self.$manager.fireEvents('afterRemove', entity);
+                        repository.$manager.fireEvents('afterRemove', entity);
                     }
 
-                    console.log(self.$entityName + ' #' + id + ' deleted');
-
-                    console.groupEnd();
+                    console.log(repository.$entityName + ' #' + entity.id + ' deleted');
                 }
-            )
-        ;
+            );
+        });
     };
 
     /**
      * Remove collection of objects | object identifiers
      */
     IDBRepository.prototype.removeCollection = IDBRepository.prototype._removeCollection = function(collection, fireEvents) {
-        console.group('Remove collection');
+        console.log('Remove collection');
+
+        var repository = this;
 
         return promiseForEach(
             collection,
@@ -299,7 +300,7 @@
                 try {
                     var item = collection[ i ];
 
-                    this.remove(
+                    repository.remove(
                         item,
                         fireEvents
                     );
@@ -310,9 +311,7 @@
                 } catch (e) {
                 }
             }
-        ).then(function() {
-            console.groupEnd();
-        });
+        );
     };
 
     IDBRepository.prototype.removeDeleted = IDBRepository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
@@ -326,7 +325,7 @@
             var promise = Promise.resolve();
 
             if (previousIds.length > 0) {
-                console.group('Remove deleted for entity "' + self.$entityName + '"');
+                console.log('Remove deleted for entity "' + self.$entityName + '"');
 
                 previousIds = self.$manager.clone(previousIds);
 
@@ -349,10 +348,6 @@
                         console.log('Nothing to delete');
                     });
                 }
-
-                promise.then(function() {
-                    console.groupEnd();
-                });
             }
 
             return promise;
@@ -378,7 +373,7 @@
             return false;
         }
 
-        console.group('Saving ' + this.$entityName + ' #' + id);
+        console.log('Saving ' + this.$entityName + ' #' + id);
         // console.log(entity);
 
         var changingId = id !== entity.$oldId && entity.$oldId !== null;
@@ -405,7 +400,6 @@
                     self.$manager.fireEvents('afterSave', entity);
                 }
 
-                console.groupEnd();
                 console.log(self.$entityName + ' #' + entity.id + ' saved');
 
                 return entity;
@@ -417,7 +411,7 @@
 
     IDBRepository.prototype.saveCollection = IDBRepository.prototype._saveCollection = function(collection, fireEvents) {
         if (collection.length > 0) {
-            console.group('Save collection');
+            console.log('Save collection');
 
             return promiseForEach(
                 collection,
@@ -426,9 +420,7 @@
                         return this.save(entity, fireEvents);
                     }
                 }
-            ).then(function() {
-                console.groupEnd();
-            });
+            );
         }
 
         return Promise.resolve();
