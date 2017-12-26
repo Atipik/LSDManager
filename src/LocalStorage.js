@@ -11,46 +11,6 @@
         this.$separator = '.';
     };
 
-    LocalStorage.prototype.asyncGet = function(key, defaultValue) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.get(key, defaultValue));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncHas = function(key) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.has(key));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncKey = function(parts) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.key(parts));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncSet = function(key, value) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.set(key, value));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncUnset = function(key) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.unset(key));
-            }
-        );
-    };
-
     LocalStorage.prototype.get = function(key, defaultValue) {
         var value = localStorage.getItem(
             this.key(

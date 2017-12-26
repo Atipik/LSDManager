@@ -306,26 +306,10 @@
         }
     };
 
-    Repository.prototype.asyncFindAll = Repository.prototype._asyncFindAll = function() {
-        return this.asyncQuery(
-            function() {
-                return true;
-            }
-        );
-    };
-
     Repository.prototype.findAll = Repository.prototype._findAll = function() {
         return this.query(
             function() {
                 return true;
-            }
-        );
-    };
-
-    Repository.prototype.asyncFindBy = Repository.prototype._asyncFindBy = function(field, value, justOne) {
-        return new Promise(
-            resolve => {
-                resolve(this.findBy(field, value, justOne));
             }
         );
     };
@@ -394,26 +378,10 @@
         }
     };
 
-    Repository.prototype.asyncFindByCollection = Repository.prototype._asyncFindByCollection = function(field, collection) {
-        return this.asyncQuery(
-            function(entity) {
-                return collection.indexOf(entity[ field ]) !== -1;
-            }
-        );
-    };
-
     Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
         return this.query(
             function(entity) {
                 return collection.indexOf(entity[ field ]) !== -1;
-            }
-        );
-    };
-
-    Repository.prototype.asyncFindEntity = Repository.prototype._asyncFindEntity = function(id, entityName, useCache) {
-        new Promise(
-            resolve => {
-                resolve(this.findEntity(id, entityName, useCache));
             }
         );
     };
@@ -452,18 +420,6 @@
         }
 
         return this.$manager.getFromCache(entityName, id);
-    };
-
-    Repository.prototype.asyncFindOneBy = Repository.prototype._asyncFindOneBy = function(field, value) {
-        return this.asyncFindBy(field, value, true).then(
-            entities => {
-                if (entities.length > 0) {
-                    return entities[ 0 ];
-                }
-
-                return null;
-            }
-        );
     };
 
     Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(field, value) {
@@ -627,14 +583,6 @@
         return entity;
     };
 
-    Repository.prototype.asyncQuery = Repository.prototype._asyncQuery = function(filter) {
-        return new Promise(
-            resolve => {
-                resolve(this.query(filter));
-            }
-        );
-    };
-
     Repository.prototype.query = Repository.prototype._query = function(filter) {
         var entitiesId = this.getIndexStorage('id');
         var entities   = [];
@@ -656,14 +604,6 @@
         }
 
         return entities;
-    };
-
-    Repository.prototype.asyncRemove = Repository.prototype._asyncRemove = function(data, fireEvents) {
-        return new Promise(
-            resolve => {
-                resolve(this.remove(data, fireEvents));
-            }
-        );
     };
 
     Repository.prototype.remove = Repository.prototype._remove = function(data, fireEvents) {
@@ -700,7 +640,7 @@
             return;
         }
 
-        console.group('Deleting ' + this.$entityName + ' #' + id);
+        console.log('Deleting ' + this.$entityName + ' #' + id);
 
         if (this.removeIndex('id', id)) {
             // console.log(entity);
@@ -736,47 +676,14 @@
             console.log('Nothing to delete');
         }
 
-        console.groupEnd();
-
         return this;
     };
 
     /**
      * Remove collection of objects | object identifiers
      */
-    Repository.prototype.asyncRemoveCollection = Repository.prototype._asyncRemoveCollection = function(collection, fireEvents) {
-        console.group('Remove collection');
-
-        var removes = [];
-
-        for (var i = 0; i < collection.length; i++) {
-            try {
-                var item = collection[ i ];
-
-                removes.push(
-                    this.asyncRemove(
-                        item,
-                        fireEvents
-                    )
-                );
-
-                if (collection.indexOf(item) === -1) {
-                    i--;
-                }
-            } catch (e) {
-            }
-        }
-
-        console.groupEnd();
-
-        return Promise.all(removes);
-    };
-
-    /**
-     * Remove collection of objects | object identifiers
-     */
     Repository.prototype.removeCollection = Repository.prototype._removeCollection = function(collection, fireEvents) {
-        console.group('Remove collection');
+        console.log('Remove collection');
 
         for (var i = 0; i < collection.length; i++) {
             try {
@@ -794,14 +701,12 @@
             }
         }
 
-        console.groupEnd();
-
         return this;
     };
 
     Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
         if (previousIds.length > 0) {
-            console.group('Remove deleted for entity "' + this.$entityName + '"');
+            console.log('Remove deleted for entity "' + this.$entityName + '"');
 
             previousIds = this.$manager.clone(previousIds);
 
@@ -820,8 +725,6 @@
             } else {
                 console.log('Nothing to delete');
             }
-
-            console.groupEnd();
         }
 
         return this;
@@ -859,14 +762,6 @@
         return false;
     };
 
-    Repository.prototype.asyncSave = Repository.prototype._asyncSave = function(entity, fireEvents) {
-        return new Promise(
-            resolve => {
-                resolve(this.save(entity, fireEvents));
-            }
-        );
-    };
-
     Repository.prototype.save = Repository.prototype._save = function(entity, fireEvents) {
         var id = entity.getId();
 
@@ -886,7 +781,7 @@
             return false;
         }
 
-        console.group('Saving ' + this.$entityName + ' #' + id);
+        console.log('Saving ' + this.$entityName + ' #' + id);
         // console.log(entity);
 
         var changingId = id !== entity.$oldId && entity.$oldId !== null;
@@ -944,43 +839,20 @@
             this.$manager.fireEvents('afterSave', entity);
         }
 
-        console.groupEnd();
         console.log(this.$entityName + ' #' + entity.getId() + ' saved');
 
         return true;
     };
 
-    Repository.prototype.asyncSaveCollection = Repository.prototype._asyncSaveCollection = function(collection, fireEvents) {
-        if (collection.length > 0) {
-            console.group('Save collection');
-
-            var saves = [];
-
-            for (var i = 0; i < collection.length; i++) {
-                if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
-                    saves.push(
-                        this.asyncSave(collection[ i ], fireEvents)
-                    );
-                }
-            }
-
-            console.groupEnd();
-        }
-
-        return Promise.all(saves);
-    };
-
     Repository.prototype.saveCollection = Repository.prototype._saveCollection = function(collection, fireEvents) {
         if (collection.length > 0) {
-            console.group('Save collection');
+            console.log('Save collection');
 
             for (var i = 0; i < collection.length; i++) {
                 if (collection[ i ] instanceof Entity && collection[ i ].$repository === this) {
                     this.save(collection[ i ], fireEvents);
                 }
             }
-
-            console.groupEnd();
         }
 
         return this;
@@ -1112,46 +984,6 @@
         }
 
         this.$separator = '.';
-    };
-
-    LocalStorage.prototype.asyncGet = function(key, defaultValue) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.get(key, defaultValue));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncHas = function(key) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.has(key));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncKey = function(parts) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.key(parts));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncSet = function(key, value) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.set(key, value));
-            }
-        );
-    };
-
-    LocalStorage.prototype.asyncUnset = function(key) {
-        return new Promise(
-            (resolve) => {
-                resolve(this.unset(key));
-            }
-        );
     };
 
     LocalStorage.prototype.get = function(key, defaultValue) {
@@ -1358,13 +1190,11 @@
 
     LSDManager.prototype.fireEvents = LSDManager.prototype._fireEvents = function(eventName, entity) {
         if (this.$events[ eventName ] !== undefined) {
-            console.group(Object.keys(this.$events[ eventName ]).length + ' callback(s) for event ' + eventName);
+            console.log(Object.keys(this.$events[ eventName ]).length + ' callback(s) for event ' + eventName);
 
             for (var i in this.$events[ eventName ]) {
                 this.$events[ eventName ][ i ](entity);
             }
-
-            console.groupEnd();
         }
 
         return this;
@@ -2035,7 +1865,7 @@
     };
 
     LSDManager.prototype.reindexDatabase = LSDManager.prototype._reindexDatabase = function() {
-        console.groupCollapsed('Reindex database');
+        console.log('Reindex database');
 
         for (var entityName in this.$entityDefinitions) {
             var indexFields = Object.keys(
@@ -2057,7 +1887,6 @@
         }
 
         console.log('Reindexation finished');
-        console.groupEnd();
     };
 
     LSDManager.prototype.removeCollection = LSDManager.prototype._removeCollection = function(collection, fireEvents) {
