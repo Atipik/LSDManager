@@ -218,11 +218,28 @@
     };
 
     Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
-        return this.query(
-            function(entity) {
-                return collection.indexOf(entity[ field ]) !== -1;
+        if (collection.length === 0) {
+            return [];
+        }
+
+        var entityDefinition = this.getEntityDefinition();
+        if (entityDefinition.indexes[ field ] !== undefined) {
+            var results = [];
+
+            for (var i = 0; i < collection.length; i++) {
+                results = results.concat(
+                    this.findBy(field, collection[i])
+                );
             }
-        );
+
+            return results;
+        } else {
+            return this.query(
+                function(entity) {
+                    return collection.indexOf(entity[ field ]) !== -1;
+                }
+            );
+        }
     };
 
     Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache) {
