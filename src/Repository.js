@@ -6,7 +6,7 @@
         this.$entityName = entityName;
     };
 
-    Repository.prototype.addIndex = Repository.prototype._addIndex = function(indexName, value, id, indexStorage) {
+    Repository.prototype.addIndex = Repository.prototype._addIndex = function(indexName, value, entity, indexStorage) {
         if (value === undefined || value === null) {
             return false;
         }
@@ -21,22 +21,26 @@
         var updated = false;
 
         if (indexName === 'id') {
-            if (index.indexOf(id) === -1) {
-                index.push(id);
+            if (index.indexOf(entity.id) === -1) {
+                index.push(entity.id);
 
                 updated = true;
             }
         } else {
-            value = this.getEntityDefinition().indexes[ indexName ].transformIndex(value);
+            var indexDefinition = this.getEntityDefinition().indexes[ indexName ];
 
-            if (index[ value ] === undefined) {
-                index[ value ] = [];
-            }
+            if (indexDefinition.isIndexable(entity)) {
+                value = indexDefinition.transformIndex(value);
 
-            if (index[ value ].indexOf(id) === -1) {
-                index[ value ].push(id);
+                if (index[ value ] === undefined) {
+                    index[ value ] = [];
+                }
 
-                updated = true;
+                if (index[ value ].indexOf(entity.id) === -1) {
+                    index[ value ].push(entity.id);
+
+                    updated = true;
+                }
             }
         }
 
@@ -121,7 +125,7 @@
                 this.addIndex(
                     indexName,
                     indexesDefinitions[ indexName ].getIndex(entity),
-                    entity.id,
+                    entity,
                     indexes[ indexName ]
                 );
             }
@@ -671,7 +675,7 @@
                 this.addIndex(
                     indexField,
                     newValue,
-                    id
+                    entity
                 );
             }
         }

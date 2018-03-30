@@ -1029,12 +1029,19 @@
             };
         };
 
+        var getStandardIndexableVerificator = function() {
+            return function() {
+                return true;
+            };
+        };
+
         for (var field in entityDefinition.fields) {
             if (entityDefinition.fields.hasOwnProperty(field) && entityDefinition.fields[ field ].index !== undefined) {
                 entityDefinition.indexes[ field ] = {
                     shortcut      : entityDefinition.fields[ field ].shortcut || field,
                     getIndex      : getStandardIndexGetter(field),
-                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer()
+                    isIndexable   : entityDefinition.fields[ field ].index.indexable || getStandardIndexableVerificator(),
+                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer(),
                 };
             }
         }
