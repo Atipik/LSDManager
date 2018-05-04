@@ -15,7 +15,8 @@
 
     Entity.prototype.$clone = Entity.prototype._$clone = function() {
         var clone = this.$repository.createEntity(
-            this.$toArray()
+            this.$toArray(),
+            false   /* no cache */
         );
 
         if (clone.id > 0) {
