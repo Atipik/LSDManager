@@ -644,10 +644,11 @@
         console.log('Saving ' + this.$entityName + ' #' + id);
         // console.log(entity);
 
-        var changingId = id !== entity.$oldId && entity.$oldId !== null;
+        var oldId = entity.$oldId;
+        var changingId = id !== oldId && oldId !== null;
 
         if (changingId) {
-            this.remove(entity.$oldId, fireEvents);
+            this.remove(oldId, fireEvents);
         }
 
         var indexFields;
@@ -669,7 +670,7 @@
                 this.removeIndex(
                     indexField,
                     oldValue,
-                    changingId ? entity.$oldId : id
+                    changingId ? oldId : id
                 );
 
                 this.addIndex(
@@ -692,7 +693,7 @@
 
         this.$manager.addToCache(entity);
         if (this.$manager.$useIndex) {
-            this.$manager.resetRelationsCache(entity);
+            this.$manager.resetRelationsCache(entity, oldId);
         }
 
         if (fireEvents) {

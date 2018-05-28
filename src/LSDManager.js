@@ -450,7 +450,7 @@
                                     );
                                 }
                             } catch (e) {
-                                data = [];
+                                data = undefined;
                             }
                         } else {
                             try {
@@ -466,7 +466,7 @@
                                     );
                                 }
                             } catch (e) {
-                                data = null;
+                                data = undefined;
                             }
                         }
 
@@ -888,7 +888,14 @@
         return this;
     };
 
-    LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsCache = function(entity) {
+    // old id is not set for remove but set for save
+    LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsCache = function(entity, oldId) {
+        var entityEquals = function(e1, e2, oldId) {
+            return e1 instanceof Entity
+                && e1.$repository.$entityName === e2.$repository.$entityName
+                && e1.id === (oldId || e2.id);
+        };
+
         var originalEntityName = entity.$repository.$entityName;
 
         for (var entityName in this.$entityDefinitions) {
@@ -898,13 +905,15 @@
                 var relation = entityDefinition.relations[ field ];
 
                 if (relation.entity === originalEntityName) {
+                    var setterMethod = this.getMethodName('set', this.getRelationName(relation));
+                    var getterMethod = this.getMethodName('get', this.getRelationName(relation));
+
                     for (var id in this.$cache[ entityName ]) {
                         if (id.substr(0, 1) === '$') {
                             continue;
                         }
 
                         var cachedEntity = this.$cache[ entityName ][ id ];
-                        var getterMethod = this.getMethodName('get', this.getRelationName(relation));
 
                         try {
                             var relationValue = cachedEntity[ getterMethod ]();
@@ -913,16 +922,30 @@
                         }
 
                         if (relation.type === 'one') {
-                            if (relationValue === entity) {
-                                var setterMethod = this.getMethodName('set', this.getRelationName(relation));
-
-                                cachedEntity[ setterMethod ](undefined);
+                            if (entityEquals(relationValue, entity, oldId)) {
+                                // if old is set, replace entity with the new one
+                                // else remove it
+                                cachedEntity[ setterMethod ](
+                                    oldId ? entity : undefined
+                                );
                             }
                         } else {
-                            var indexOf = relationValue.indexOf(entity);
+                            for (var i = 0; i < relationValue.length; i++) {
+                                if (entityEquals(relationValue[i], entity, oldId)) {
+                                    if (oldId) {
+                                        // if oldId is set, replace entity with the new one
+                                        relationValue.splice(i, 1, entity);
+                                    } else {
+                                        // else remove it
+                                        relationValue.splice(i, 1);
+                                    }
 
-                            if (indexOf !== -1) {
-                                relationValue.splice(indexOf, 1);
+                                    break;
+                                }
+                            }
+
+                            if (relationValue.length === 0) {
+                                cachedEntity[ setterMethod ](undefined);
                             }
                         }
                     }
@@ -1058,7 +1081,13 @@
     };
 
     LSDManager.prototype.setRelationCache = LSDManager.prototype._setRelationCache = function(entity, relation, value) {
-        entity.$relationsCache[ this.getRelationName(relation) ] = value;
+        var relationName = this.getRelationName(relation);
+
+        if (value === undefined) {
+            delete entity.$relationsCache[ relationName ];
+        } else {
+            entity.$relationsCache[ relationName ] = value;
+        }
 
         return this;
     };
