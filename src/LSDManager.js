@@ -930,22 +930,24 @@
                                 );
                             }
                         } else {
-                            for (var i = 0; i < relationValue.length; i++) {
-                                if (entityEquals(relationValue[i], entity, oldId)) {
-                                    if (oldId) {
-                                        // if oldId is set, replace entity with the new one
-                                        relationValue.splice(i, 1, entity);
-                                    } else {
-                                        // else remove it
-                                        relationValue.splice(i, 1);
+                            if (Array.isArray(relationValue)) {
+                                for (var i = 0; i < relationValue.length; i++) {
+                                    if (entityEquals(relationValue[ i ], entity, oldId)) {
+                                        if (oldId) {
+                                            // if oldId is set, replace entity with the new one
+                                            relationValue.splice(i, 1, entity);
+                                        } else {
+                                            // else remove it
+                                            relationValue.splice(i, 1);
+                                        }
+
+                                        break;
                                     }
-
-                                    break;
                                 }
-                            }
 
-                            if (relationValue.length === 0) {
-                                cachedEntity[ setterMethod ](undefined);
+                                if (relationValue.length === 0) {
+                                    cachedEntity[ setterMethod ](undefined);
+                                }
                             }
                         }
                     }
