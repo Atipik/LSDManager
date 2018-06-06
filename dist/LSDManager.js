@@ -580,7 +580,7 @@
     };
 
     Repository.prototype.loadEntity = Repository.prototype._loadEntity = function(entity, data) {
-        var field, methodStorage, methodSet;
+        var field, methodSet;
 
         var shortcuts = this.getEntityDefinition().shortcuts;
 
