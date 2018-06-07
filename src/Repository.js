@@ -692,7 +692,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
-        if (this.$manager.$useIndex) {
+        if (this.$manager.$useIndex && changingId) {
             this.$manager.resetRelationsCache(entity, oldId);
         }
 
