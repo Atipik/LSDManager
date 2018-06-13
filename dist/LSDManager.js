@@ -383,7 +383,7 @@
         }
     };
 
-    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection) {
+    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection, ignoreMissing) {
         if (collection.length === 0) {
             return [];
         }
@@ -393,9 +393,15 @@
             var results = [];
 
             for (var i = 0; i < collection.length; i++) {
-                results = results.concat(
-                    this.findBy(field, collection[i])
-                );
+                try {
+                    var result = this.findBy(field, collection[ i ]);
+
+                    results = results.concat(result);
+                } catch (e) {
+                    if (!ignoreMissing) {
+                        throw e;
+                    }
+                }
             }
 
             return results;
@@ -854,7 +860,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
-        if (this.$manager.$useIndex && oldId) {
+        if (this.$manager.$useIndex && changingId) {
             this.$manager.resetRelationsCache(entity, oldId);
         }
 
