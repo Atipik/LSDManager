@@ -1571,11 +1571,15 @@
                 } else {
                     getterMethod = manager.getMethodName('get', valueRelationName);
 
-                    if (value[ getterMethod ] !== undefined && value[ getterMethod ]().indexOf(entity) === -1) {
-                        valueRelationName = manager.getRelationName(valueRelation, false);
-                        var adderMethod   = manager.getMethodName('add', valueRelationName);
+                    if (value[ getterMethod ] !== undefined) {
+                        var entities = value[ getterMethod ]();
 
-                        value[ adderMethod ](entity);
+                        if (!entities || entities.indexOf(entity) === -1) {
+                            valueRelationName = manager.getRelationName(valueRelation, false);
+                            var adderMethod   = manager.getMethodName('add', valueRelationName);
+
+                            value[ adderMethod ](entity);
+                        }
                     }
                 }
             };
@@ -1612,6 +1616,10 @@
                         relationCache = this[ manager.getRelationName(relation).lowerCaseFirstLetter() ];
 
                         manager.setRelationCache(this, relation, relationCache);
+                    }
+
+                    if (!relationCache) {
+                        relationCache = [];
                     }
 
                     if (relationCache.indexOf(value) === -1) {
