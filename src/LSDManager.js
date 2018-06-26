@@ -507,11 +507,15 @@
                 } else {
                     getterMethod = manager.getMethodName('get', valueRelationName);
 
-                    if (value[ getterMethod ] !== undefined && value[ getterMethod ]().indexOf(entity) === -1) {
-                        valueRelationName = manager.getRelationName(valueRelation, false);
-                        var adderMethod   = manager.getMethodName('add', valueRelationName);
+                    if (value[ getterMethod ] !== undefined) {
+                        var entities = value[ getterMethod ]();
 
-                        value[ adderMethod ](entity);
+                        if (!entities || entities.indexOf(entity) === -1) {
+                            valueRelationName = manager.getRelationName(valueRelation, false);
+                            var adderMethod   = manager.getMethodName('add', valueRelationName);
+
+                            value[ adderMethod ](entity);
+                        }
                     }
                 }
             };
@@ -550,6 +554,10 @@
                         manager.setRelationCache(this, relation, relationCache);
                     }
 
+                    if (!relationCache) {
+                        relationCache = [];
+                    }
+
                     if (relationCache.indexOf(value) === -1) {
                         relationCache.push(value);
                     }
@@ -585,7 +593,7 @@
                     };
 
                     var getterMethod = this.getMethodName('get', relationPluralName);
-                    var getter   = getRelationGetter(field, relation);
+                    var getter       = getRelationGetter(field, relation);
 
                     if (this.$entity[ entityName ][ '_' + getterMethod ] === undefined) {
                         this.$entity[ entityName ][ '_' + getterMethod ] = getter;
@@ -667,8 +675,8 @@
         var id;
 
         idFactory = idFactory || function() {
-                return -(new Date().getTime());
-            };
+            return -(new Date().getTime());
+        };
 
         do {
             id = idFactory();
@@ -896,44 +904,6 @@
                 && e1.id === (oldId || e2.id);
         };
 
-        var resetRelationCache = function(cachedEntity) {
-            try {
-                var relationValue = cachedEntity[ getterMethod ]();
-            } catch (e) {
-                return;
-            }
-
-            if (relation.type === 'one') {
-                if (entityEquals(relationValue, entity, oldId)) {
-                    // if old is set, replace entity with the new one
-                    // else remove it
-                    cachedEntity[ setterMethod ](
-                        oldId ? entity : undefined
-                    );
-                }
-            } else {
-                if (Array.isArray(relationValue)) {
-                    for (var i = 0; i < relationValue.length; i++) {
-                        if (entityEquals(relationValue[ i ], entity, oldId)) {
-                            if (oldId) {
-                                // if oldId is set, replace entity with the new one
-                                relationValue.splice(i, 1, entity);
-                            } else {
-                                // else remove it
-                                relationValue.splice(i, 1);
-                            }
-
-                            break;
-                        }
-                    }
-
-                    if (relationValue.length === 0) {
-                        cachedEntity[ setterMethod ](undefined);
-                    }
-                }
-            }
-        };
-
         var originalEntityName = entity.$repository.$entityName;
 
         for (var entityName in this.$entityDefinitions) {
@@ -951,13 +921,47 @@
                     if (oldId) {
                         ids.push(oldId);
                     }
-                    var repository = this.getRepository(entityName);
+                    var repository     = this.getRepository(entityName);
                     var cachedEntities = repository.findByCollection(field, ids, undefined, true);
 
                     for (var i = 0; i < cachedEntities.length; i++) {
-                        resetRelationCache(
-                            cachedEntities[ i ]
-                        );
+                        var cachedEntity = cachedEntities[ i ];
+
+                        try {
+                            var relationValue = cachedEntity[ getterMethod ]();
+                        } catch (e) {
+                            return;
+                        }
+
+                        if (relation.type === 'one') {
+                            if (entityEquals(relationValue, entity, oldId)) {
+                                // if old is set, replace entity with the new one
+                                // else remove it
+                                cachedEntity[ setterMethod ](
+                                    oldId ? entity : undefined
+                                );
+                            }
+                        } else {
+                            if (Array.isArray(relationValue)) {
+                                for (var i = 0; i < relationValue.length; i++) {
+                                    if (entityEquals(relationValue[ i ], entity, oldId)) {
+                                        if (oldId) {
+                                            // if oldId is set, replace entity with the new one
+                                            relationValue.splice(i, 1, entity);
+                                        } else {
+                                            // else remove it
+                                            relationValue.splice(i, 1);
+                                        }
+
+                                        break;
+                                    }
+                                }
+
+                                if (relationValue.length === 0) {
+                                    cachedEntity[ setterMethod ](undefined);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1052,7 +1056,7 @@
 
         var getStandardIndexGetter = function(field) {
             return function(entity) {
-                return entity.get(field) || entity.$oldValues[field];
+                return entity.get(field) || entity.$oldValues[ field ];
             };
         };
 
@@ -1074,7 +1078,7 @@
                     shortcut      : entityDefinition.fields[ field ].shortcut || field,
                     getIndex      : getStandardIndexGetter(field),
                     isIndexable   : entityDefinition.fields[ field ].index.indexable || getStandardIndexableVerificator(),
-                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer(),
+                    transformIndex: entityDefinition.fields[ field ].index.transformer || getStandardIndexTransformer()
                 };
             }
         }
