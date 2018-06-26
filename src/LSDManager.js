@@ -896,6 +896,44 @@
                 && e1.id === (oldId || e2.id);
         };
 
+        var resetRelationCache = function(cachedEntity) {
+            try {
+                var relationValue = cachedEntity[ getterMethod ]();
+            } catch (e) {
+                return;
+            }
+
+            if (relation.type === 'one') {
+                if (entityEquals(relationValue, entity, oldId)) {
+                    // if old is set, replace entity with the new one
+                    // else remove it
+                    cachedEntity[ setterMethod ](
+                        oldId ? entity : undefined
+                    );
+                }
+            } else {
+                if (Array.isArray(relationValue)) {
+                    for (var i = 0; i < relationValue.length; i++) {
+                        if (entityEquals(relationValue[ i ], entity, oldId)) {
+                            if (oldId) {
+                                // if oldId is set, replace entity with the new one
+                                relationValue.splice(i, 1, entity);
+                            } else {
+                                // else remove it
+                                relationValue.splice(i, 1);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    if (relationValue.length === 0) {
+                        cachedEntity[ setterMethod ](undefined);
+                    }
+                }
+            }
+        };
+
         var originalEntityName = entity.$repository.$entityName;
 
         for (var entityName in this.$entityDefinitions) {
@@ -905,51 +943,21 @@
                 var relation = entityDefinition.relations[ field ];
 
                 if (relation.entity === originalEntityName) {
-                    var setterMethod = this.getMethodName('set', this.getRelationName(relation));
-                    var getterMethod = this.getMethodName('get', this.getRelationName(relation));
+                    var relationName = this.getRelationName(relation);
+                    var setterMethod = this.getMethodName('set', relationName);
+                    var getterMethod = this.getMethodName('get', relationName);
 
-                    for (var id in this.$cache[ entityName ]) {
-                        if (id.substr(0, 1) === '$') {
-                            continue;
-                        }
+                    var ids = [ entity.id ];
+                    if (oldId) {
+                        ids.push(oldId);
+                    }
+                    var repository = this.getRepository(entityName);
+                    var cachedEntities = repository.findByCollection(field, ids, undefined, true);
 
-                        var cachedEntity = this.$cache[ entityName ][ id ];
-
-                        try {
-                            var relationValue = cachedEntity[ getterMethod ]();
-                        } catch (e) {
-                            continue;
-                        }
-
-                        if (relation.type === 'one') {
-                            if (entityEquals(relationValue, entity, oldId)) {
-                                // if old is set, replace entity with the new one
-                                // else remove it
-                                cachedEntity[ setterMethod ](
-                                    oldId ? entity : undefined
-                                );
-                            }
-                        } else {
-                            if (Array.isArray(relationValue)) {
-                                for (var i = 0; i < relationValue.length; i++) {
-                                    if (entityEquals(relationValue[ i ], entity, oldId)) {
-                                        if (oldId) {
-                                            // if oldId is set, replace entity with the new one
-                                            relationValue.splice(i, 1, entity);
-                                        } else {
-                                            // else remove it
-                                            relationValue.splice(i, 1);
-                                        }
-
-                                        break;
-                                    }
-                                }
-
-                                if (relationValue.length === 0) {
-                                    cachedEntity[ setterMethod ](undefined);
-                                }
-                            }
-                        }
+                    for (var i = 0; i < cachedEntities.length; i++) {
+                        resetRelationCache(
+                            cachedEntities[ i ]
+                        );
                     }
                 }
             }

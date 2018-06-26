@@ -157,14 +157,20 @@
         );
     };
 
-    Repository.prototype.findBy = Repository.prototype._findBy = function(field, value, justOne) {
+    Repository.prototype.findBy = Repository.prototype._findBy = function(field, value, justOne, onlyInCache) {
         // ID
         if (field === 'id') {
-            if (!value) {
-                return [];
-            } else {
-                return [ this.findEntity(value) ];
+            var result = [];
+
+            if (value) {
+                var entity = this.findEntity(value, undefined, undefined, onlyInCache);
+
+                if (entity) {
+                    result.push(entity);
+                }
             }
+
+            return result;
         }
 
         // INDEX
@@ -174,17 +180,27 @@
             var indexValue = entityDefinition.indexes[ field ].transformIndex(value);
 
             if (justOne) {
+                var result = [];
+
                 if (index[ indexValue ] && index[ indexValue ][ 0 ]) {
-                    return [ this.findEntity(index[ indexValue ][ 0 ]) ];
-                } else {
-                    return [];
+                    var entity = this.findEntity(index[ indexValue ][ 0 ], undefined, undefined, onlyInCache);
+
+                    if (entity) {
+                        result.push(entity);
+                    }
                 }
+
+                return result;
             } else {
                 var entities = [];
 
                 if (index[ indexValue ]) {
                     for (var i = 0; i < index[ indexValue ].length; i++) {
-                        entities.push(this.findEntity(index[ indexValue ][ i ]));
+                        var entity = this.findEntity(index[ indexValue ][ i ], undefined, undefined, onlyInCache);
+
+                        if (entity) {
+                            entities.push(entity);
+                        }
                     }
                 }
 
@@ -198,7 +214,8 @@
         var entities = this.query(
             function(entity) {
                 return entity[ field ] === value;
-            }
+            },
+            onlyInCache
         );
 
         var searchDuration = Date.now() - start;
@@ -221,7 +238,7 @@
         }
     };
 
-    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection, ignoreMissing) {
+    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection, ignoreMissing, onlyInCache) {
         if (collection.length === 0) {
             return [];
         }
@@ -232,7 +249,7 @@
 
             for (var i = 0; i < collection.length; i++) {
                 try {
-                    var result = this.findBy(field, collection[ i ]);
+                    var result = this.findBy(field, collection[ i ], undefined, onlyInCache);
 
                     results = results.concat(result);
                 } catch (e) {
@@ -247,12 +264,13 @@
             return this.query(
                 function(entity) {
                     return collection.indexOf(entity[ field ]) !== -1;
-                }
+                },
+                onlyInCache
             );
         }
     };
 
-    Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache) {
+    Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache, onlyInCache) {
         if (!entityName) {
             entityName = this.$entityName;
         }
@@ -261,7 +279,9 @@
             useCache = true;
         }
 
-        if (!useCache || !this.$manager.hasInCache(entityName, id)) {
+        var hasInCache = this.$manager.hasInCache(entityName, id);
+
+        if ((!useCache || !hasInCache) && !onlyInCache) {
             var entityKey = this.$manager.$storage.key(
                 [ this.getStorageKeyName(entityName), id ]
             );
@@ -288,8 +308,8 @@
         return this.$manager.getFromCache(entityName, id);
     };
 
-    Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(field, value) {
-        var entities = this.findBy(field, value, true);
+    Repository.prototype.findOneBy = Repository.prototype._findOneBy = function(field, value, onlyInCache) {
+        var entities = this.findBy(field, value, true, onlyInCache);
 
         if (entities.length > 0) {
             return entities[ 0 ];
@@ -449,13 +469,22 @@
         return entity;
     };
 
-    Repository.prototype.query = Repository.prototype._query = function(filter) {
-        var entitiesId = this.getIndexStorage('id');
+    Repository.prototype.query = Repository.prototype._query = function(filter, onlyInCache) {
         var entities   = [];
+        var entitiesId = onlyInCache
+            ? (this.$manager.$cache[ this.$entityName ] === undefined
+                ? []
+                : Object.keys(this.$manager.$cache[ this.$entityName ])
+            )
+            : this.getIndexStorage('id');
 
         for (var i = 0; i < entitiesId.length; i++) {
             try {
-                var entity = this.findEntity(entitiesId[ i ]);
+                var entity = this.findEntity(entitiesId[ i ], undefined, undefined, onlyInCache);
+
+                if (!entity) {
+                    continue;
+                }
             } catch (e) {
                 entitiesId.splice(i, 1);
                 this.setIndexStorage('id', entitiesId);
