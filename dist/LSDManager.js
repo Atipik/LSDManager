@@ -889,7 +889,7 @@
         entity.$oldValues = this.$manager.clone(entity.$values);
 
         this.$manager.addToCache(entity);
-        if (this.$manager.$useIndex && changingId) {
+        if (this.$manager.$useIndex && id !== oldId) {
             this.$manager.resetRelationsCache(entity, oldId);
         }
 
@@ -2010,12 +2010,25 @@
                     var setterMethod = this.getMethodName('set', relationName);
                     var getterMethod = this.getMethodName('get', relationName);
 
-                    var ids = [ entity.id ];
-                    if (oldId) {
-                        ids.push(oldId);
+                    var cachedIds = [];
+                    var cachedField;
+
+                    if (relation.type === 'one') {
+                        cachedIds.push(entity.id);
+
+                        if (oldId) {
+                            cachedIds.push(oldId);
+                        }
+
+                        cachedField = field;
+                    } else if (relation.type === 'many') {
+                        cachedIds.push(entity[ relation.referencedField ]);
+
+                        cachedField = 'id';
                     }
+
                     var repository     = this.getRepository(entityName);
-                    var cachedEntities = repository.findByCollection(field, ids, undefined, true);
+                    var cachedEntities = repository.findByCollection(cachedField, cachedIds, undefined, true);
 
                     for (var i = 0; i < cachedEntities.length; i++) {
                         var cachedEntity = cachedEntities[ i ];
