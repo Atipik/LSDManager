@@ -66,12 +66,12 @@
 
         var entity = manager.extend(
             new Entity(this),
-            manager.getEntity(this.$entityName)
+            manager.getEntity(this.$entityName),
         );
 
         Object.defineProperties(
             entity,
-            manager.$entityProperties[ this.$entityName ]
+            manager.$entityProperties[ this.$entityName ],
         );
 
         entity.__init__();
@@ -82,7 +82,7 @@
 
         entity = this.loadEntity(
             entity,
-            data
+            data,
         );
 
         if (useCache) {
@@ -126,7 +126,7 @@
                     indexName,
                     indexesDefinitions[ indexName ].getIndex(entity),
                     entity,
-                    indexes[ indexName ]
+                    indexes[ indexName ],
                 );
             }
         }
@@ -144,7 +144,7 @@
         for (var indexName in entityDefinition.indexes) {
             this.$manager.deleteFromCache(
                 this.$entityName,
-                this.$INDEX_PREFIX + indexName
+                this.$INDEX_PREFIX + indexName,
             );
         }
     };
@@ -153,7 +153,7 @@
         return this.query(
             function() {
                 return true;
-            }
+            },
         );
     };
 
@@ -215,7 +215,7 @@
             function(entity) {
                 return entity[ field ] === value;
             },
-            onlyInCache
+            onlyInCache,
         );
 
         var searchDuration = Date.now() - start;
@@ -223,7 +223,7 @@
         if (searchDuration > 500) {
             console.warn(
                 'You should add an index on ' + this.$entityName + '.' + field
-                + ' (' + searchDuration + 'ms to execute query).'
+                + ' (' + searchDuration + 'ms to execute query).',
             );
         }
 
@@ -238,7 +238,8 @@
         }
     };
 
-    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(field, collection, ignoreMissing, onlyInCache) {
+    Repository.prototype.findByCollection = Repository.prototype._findByCollection = function(
+        field, collection, ignoreMissing, onlyInCache) {
         if (collection.length === 0) {
             return [];
         }
@@ -265,12 +266,13 @@
                 function(entity) {
                     return collection.indexOf(entity[ field ]) !== -1;
                 },
-                onlyInCache
+                onlyInCache,
             );
         }
     };
 
-    Repository.prototype.findEntity = Repository.prototype._findEntity = function(id, entityName, useCache, onlyInCache) {
+    Repository.prototype.findEntity = Repository.prototype._findEntity = function(
+        id, entityName, useCache, onlyInCache) {
         if (!entityName) {
             entityName = this.$entityName;
         }
@@ -283,7 +285,7 @@
 
         if ((!useCache || !hasInCache) && !onlyInCache) {
             var entityKey = this.$manager.$storage.key(
-                [ this.getStorageKeyName(entityName), id ]
+                [ this.getStorageKeyName(entityName), id ],
             );
 
             if (!this.$manager.$storage.has(entityKey)) {
@@ -291,8 +293,10 @@
             }
 
             var entity = this.createEntity(
-                this.$manager.$storage.get(entityKey),
-                useCache
+                this.getFullData(
+                    this.$manager.$storage.get(entityKey),
+                ),
+                useCache,
             );
 
             entity.$oldId     = entity.id;
@@ -322,7 +326,8 @@
         return this.$manager.getEntityDefinition(this.$entityName);
     };
 
-    Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStorageData = function(entity, useShortCut, removeNull) {
+    Repository.prototype.getEntityStorageData = Repository.prototype._getEntityStorageData = function(
+        entity, useShortCut, removeNull) {
         var data = {}, field, storageMethod;
 
         if (useShortCut === undefined) {
@@ -354,12 +359,30 @@
         return data;
     };
 
+    Repository.prototype.getFullData = Repository.prototype._getFullData = function(data) {
+        var fields = this.getEntityDefinition().fields;
+
+        for (var field in fields) {
+            var fieldConf = fields[ field ];
+
+            if (data[ field ] === undefined
+                && fieldConf.shortcut !== undefined && data[ fieldConf.shortcut ] === undefined
+            ) {
+                data[ field ] = null;
+            }
+        }
+
+        return data;
+    };
+
     Repository.prototype.getStorageKeyName = Repository.prototype._getStorageKeyName = function(entityName) {
         if (entityName === undefined) {
             entityName = this.$entityName;
         }
 
-        return this.$manager.$useShortcut ? (this.$manager.getEntityDefinition(entityName).shortcut || entityName) : entityName;
+        return this.$manager.$useShortcut
+               ? (this.$manager.getEntityDefinition(entityName).shortcut || entityName)
+               : entityName;
     };
 
     Repository.prototype.getIndexStorageKey = Repository.prototype._getIndexStorageKey = function(fieldName) {
@@ -368,8 +391,8 @@
                 this.getStorageKeyName(),
                 this.$manager.$INDEX_PREFIX + (
                     this.$manager.$useShortcut ? this.getEntityDefinition().indexes[ fieldName ].shortcut : fieldName
-                )
-            ]
+                ),
+            ],
         );
     };
 
@@ -380,7 +403,7 @@
         if (!this.$manager.hasInCache(entityName, cacheName)) {
             var indexStorage = this.$manager.$storage.get(
                 this.getIndexStorageKey(indexName),
-                indexName === 'id' ? [] : null
+                indexName === 'id' ? [] : null,
             );
 
             if (indexStorage === null) {
@@ -472,11 +495,11 @@
     Repository.prototype.query = Repository.prototype._query = function(filter, onlyInCache) {
         var entities   = [];
         var entitiesId = onlyInCache
-            ? (this.$manager.$cache[ this.$entityName ] === undefined
-                ? []
-                : Object.keys(this.$manager.$cache[ this.$entityName ])
-            )
-            : this.getIndexStorage('id');
+                         ? (this.$manager.$cache[ this.$entityName ] === undefined
+                            ? []
+                            : Object.keys(this.$manager.$cache[ this.$entityName ])
+                         )
+                         : this.getIndexStorage('id');
 
         for (var i = 0; i < entitiesId.length; i++) {
             try {
@@ -547,20 +570,19 @@
                     this.removeIndex(
                         fieldName,
                         entityDefinition.indexes[ fieldName ].getIndex(entity),
-                        id
+                        id,
                     );
                 }
             }
 
             this.$manager.$storage.unset(
                 this.$manager.$storage.key(
-                    [ this.getStorageKeyName(), id ]
-                )
+                    [ this.getStorageKeyName(), id ],
+                ),
             );
 
             this.$manager.deleteFromCache(this.$entityName, id);
             this.$manager.resetRelationsCache(entity);
-
 
             if (fireEvents) {
                 this.$manager.fireEvents('afterRemove', entity);
@@ -586,7 +608,7 @@
 
                 this.remove(
                     item,
-                    fireEvents
+                    fireEvents,
                 );
 
                 if (collection.indexOf(item) === -1) {
@@ -599,7 +621,8 @@
         return this;
     };
 
-    Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(collection, previousIds, fireEvents) {
+    Repository.prototype.removeDeleted = Repository.prototype._removeDeleted = function(
+        collection, previousIds, fireEvents) {
         if (previousIds.length > 0) {
             console.log('Remove deleted for entity "' + this.$entityName + '"');
 
@@ -679,7 +702,7 @@
         console.log('Saving ' + this.$entityName + ' #' + id);
         // console.log(entity);
 
-        var oldId = entity.$oldId;
+        var oldId      = entity.$oldId;
         var changingId = id !== oldId && oldId !== null;
 
         if (changingId) {
@@ -705,22 +728,22 @@
                 this.removeIndex(
                     indexField,
                     oldValue,
-                    changingId ? oldId : id
+                    changingId ? oldId : id,
                 );
 
                 this.addIndex(
                     indexField,
                     newValue,
-                    entity
+                    entity,
                 );
             }
         }
 
         this.$manager.$storage.set(
             this.$manager.$storage.key(
-                [ this.getStorageKeyName(), id ]
+                [ this.getStorageKeyName(), id ],
             ),
-            this.getEntityStorageData(entity)
+            this.getEntityStorageData(entity),
         );
 
         entity.$oldId     = id;
@@ -820,7 +843,7 @@
                         entities = repository.query(
                             function(currentEntity) {
                                 return currentEntity.get(field).indexOf(oldId) !== -1;
-                            }
+                            },
                         );
                     }
                 }
@@ -828,16 +851,16 @@
                 for (var i = 0; i < entities.length; i++) {
                     console.log(
                         'Update relation ID in entity "' + dependencyName + '" #' + entities[ i ].getId() +
-                        ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId()
+                        ' to entity "' + entity.$repository.$entityName + '" #' + entity.getId(),
                     );
                     if (dependency.type === 'one') {
                         entities[ i ].set(
                             field,
-                            entity.getId()
+                            entity.getId(),
                         );
                     } else if (dependency.type === 'many') {
                         var data = entities[ i ].get(
-                            field
+                            field,
                         );
 
                         var index = data.indexOf(oldId);
@@ -846,7 +869,7 @@
 
                         entities[ i ].set(
                             field,
-                            data
+                            data,
                         );
                     }
                 }
@@ -859,13 +882,13 @@
     Repository.prototype.setIndexStorage = Repository.prototype._setIndexStorage = function(fieldName, indexStorage) {
         this.$manager.$storage.set(
             this.getIndexStorageKey(fieldName),
-            indexStorage
+            indexStorage,
         );
 
         this.$manager.addToCache(
             this.$entityName,
             this.$manager.$INDEX_PREFIX + fieldName,
-            indexStorage
+            indexStorage,
         );
     };
 }(window));
