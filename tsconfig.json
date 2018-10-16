@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module" : "none",
+    "target" : "es6",
+    "pretty" : true,
+    "outFile": "./dist/LSDManager.js",
+    "rootDir": "./src"
+  },
+  "compileOnSave"  : true,
+  "files"          : [
+    "./src/Repository.ts",
+    "./src/EntityRelation.ts",
+    "./src/Entity.ts",
+    "./src/LocalStorage.ts",
+    "./src/LSDManager.ts"
+  ]
+}
