@@ -751,7 +751,7 @@
 
         this.$manager.addToCache(entity);
         if (this.$manager.$useIndex && id !== oldId) {
-            this.$manager.resetRelationsCache(entity, oldId);
+            this.$manager.resetRelationsCache(entity, true, oldId);
         }
 
         if (fireEvents) {

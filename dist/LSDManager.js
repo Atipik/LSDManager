@@ -913,7 +913,7 @@
 
         this.$manager.addToCache(entity);
         if (this.$manager.$useIndex && id !== oldId) {
-            this.$manager.resetRelationsCache(entity, oldId);
+            this.$manager.resetRelationsCache(entity, true, oldId);
         }
 
         if (fireEvents) {
@@ -2013,7 +2013,7 @@
     };
 
     // old id is not set for remove but set for save
-    LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsCache = function(entity, oldId) {
+    LSDManager.prototype.resetRelationsCache = LSDManager.prototype._resetRelationsCache = function(entity, replace, oldId) {
         var entityEquals = function(e1, e2, oldId) {
             return e1 instanceof Entity
                 && e1.$repository.$entityName === e2.$repository.$entityName
@@ -2064,21 +2064,17 @@
 
                         if (relation.type === 'one') {
                             if (entityEquals(relationValue, entity, oldId)) {
-                                // if old is set, replace entity with the new one
-                                // else remove it
                                 cachedEntity[ setterMethod ](
-                                    oldId ? entity : undefined
+                                    replace ? entity : undefined
                                 );
                             }
                         } else {
                             if (Array.isArray(relationValue)) {
                                 for (var i = 0; i < relationValue.length; i++) {
                                     if (entityEquals(relationValue[ i ], entity, oldId)) {
-                                        if (oldId) {
-                                            // if oldId is set, replace entity with the new one
+                                        if (replace) {
                                             relationValue.splice(i, 1, entity);
                                         } else {
-                                            // else remove it
                                             relationValue.splice(i, 1);
                                         }
 
